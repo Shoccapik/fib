@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FIB - Rapports</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <h2>FIB</h2>
+
+        <a href="/dashboard">Dashboard</a>
+        <a href="#">Citoyens</a>
+        <a href="/reports" class="active">Rapports</a>
+        <a href="/service">Service</a>
+        <a href="#">Messages</a>
+
+        <div class="logout">
+            <a href="/logout">Déconnexion</a>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <div class="topbar">
+            <h1>Rapports</h1>
+        </div>
+
+        <!-- FORMULAIRE -->
+        <div class="report-form">
+            <h2>Créer un rapport</h2>
+
+            <form method="POST" action="/reports/create">
+
+                <input name="title" placeholder="Titre du rapport" required>
+
+                <textarea name="content" placeholder="Description..." required></textarea>
+
+                <input name="personnes_concernees" placeholder="Personnes concernées (virgule séparées)">
+                <input name="agents_concernes" placeholder="Agents concernés (virgule séparés)">
+                <input name="vehicules" placeholder="Véhicules utilisés">
+                <input name="plaques" placeholder="Plaques des véhicules">
+                <input name="armes" placeholder="Armes impliquées">
+                <input name="numeros_serie" placeholder="Numéros de série (arme)">
+
+                <select name="level">
+                    <option value="1">Public</option>
+                    <option value="2">Confidentiel</option>
+                    <option value="3">Secret</option>
+                </select>
+
+                <button class="btn">Créer</button>
+
+            </form>
+        </div>
+
+        <!-- LISTE DES RAPPORTS -->
+        <div class="reports-list">
+
+            <h2>Rapports récents</h2>
+
+            <% if (reports.length === 0) { %>
+                <p>Aucun rapport</p>
+            <% } %>
+
+            <% reports.forEach(report => { %>
+
+                <div class="report-card">
+
+                    <h3><a href="/reports/<%= report.id %>"><%= report.title %></a></h3>
+                    <p><%= report.content.substring(0, 190) %><%= report.content.length > 190 ? '...' : '' %></p>
+
+                    <div class="meta">
+                        <span>Niveau : <%= report.level === 1 ? 'Public' : report.level === 2 ? 'Confidentiel' : 'Secret' %></span>
+                        <span>Agent : <%= report.agent_username || 'Inconnu' %> (<%= report.agent_grade || 'N/A' %>)</span>
+                        <span><%= new Date(report.created_at).toLocaleString('fr-FR') %></span>
+                    </div>
+
+                    <div class="detail-tags">
+                        <span>Personnes : <%= report.personnes_concernees || '-'%></span>
+                        <span>Agents : <%= report.agents_concernes || '-'%></span>
+                        <span>Véhicules : <%= report.vehicules || '-'%></span>
+                    </div>
+
+                    
+
+                </div>
+
+            <% }) %>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FIB - Citoyens</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="layout">
+
+    <div class="sidebar">
+        <img src="/images/FIB.png" alt="Logo FIB" class="sidebar-logo">
+        <a href="/auth/dashboard">Dashboard</a>
+        <a href="/citizens" class="active">Citoyens</a>
+        <a href="/reports">Rapports</a>
+        <a href="/service">Service</a>
+        <a href="/messages">Messages</a>
+        <a href="/users/admin">Admin Utilisateurs</a>
+        <a href="/logs/admin">Admin Logs</a>
+        <div class="logout">
+            <a href="/logout">Déconnexion</a>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="topbar">
+            <h1>Gestion des Citoyens</h1>
+        </div>
+
+        <div class="report-form">
+            <h2>Ajouter un citoyen</h2>
+            <form method="POST" action="/citizens/create">
+                <input name="nom" placeholder="Nom" required>
+                <input name="prenom" placeholder="Prénom" required>
+                <input name="dob" type="date" placeholder="Date de naissance" required>
+                <button class="btn">Ajouter</button>
+            </form>
+        </div>
+
+        <div class="reports-list">
+            <h2>Liste des citoyens</h2>
+            <% if (citizens.length === 0) { %>
+                <p>Aucun citoyen enregistré</p>
+            <% } else { %>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nom</th>
+                            <th>Prénom</th>
+                            <th>Date de naissance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% citizens.forEach(citizen => { %>
+                            <tr>
+                                <td><a href="/citizens/<%= citizen.id %>"><%= citizen.id %></a></td>
+                                <td><a href="/citizens/<%= citizen.id %>"><%= citizen.nom %></a></td>
+                                <td><a href="/citizens/<%= citizen.id %>"><%= citizen.prenom %></a></td>
+                                <td><a href="/citizens/<%= citizen.id %>"><%= new Date(citizen.dob).toLocaleDateString('fr-FR') %></a></td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            <% } %>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

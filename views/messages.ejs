@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FIB - Rapports</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <h2>FIB</h2>
+
+        <a href="/dashboard">Dashboard</a>
+        <a href="#">Citoyens</a>
+        <a href="/reports" class="active">Rapports</a>
+        <a href="/service">Service</a>
+        <a href="#">Messages</a>
+
+        <div class="logout">
+            <a href="/logout">Déconnexion</a>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <div class="topbar">
+            <h1>Rapports</h1>
+        </div>
+
+        <!-- FORMULAIRE -->
+        <div class="report-form">
+            <h2>Créer un rapport</h2>
+
+            <form method="POST" action="/reports/create">
+
+                <input name="title" placeholder="Titre du rapport" required>
+
+                <textarea name="content" placeholder="Description..." required></textarea>
+
+                <select name="level">
+                    <option value="1">Public</option>
+                    <option value="2">Confidentiel</option>
+                    <option value="3">Secret</option>
+                </select>
+
+                <button class="btn">Créer</button>
+
+            </form>
+        </div>
+
+        <!-- LISTE DES RAPPORTS -->
+        <div class="reports-list">
+
+            <h2>Rapports récents</h2>
+
+            <% if (reports.length === 0) { %>
+                <p>Aucun rapport</p>
+            <% } %>
+
+            <% reports.forEach(report => { %>
+
+                <div class="report-card">
+
+                    <h3><%= report.title %></h3>
+                    <p><%= report.content %></p>
+
+                    <div class="meta">
+                        <span>Niveau : <%= report.level %></span>
+                        <span><%= report.created_at %></span>
+                    </div>
+
+                </div>
+
+            <% }) %>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FIB - Service</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <img src="/images/FIB.png" alt="Logo FIB">
+
+        <a href="auth/dashboard">Dashboard</a>
+        <a href="auth/citizens">Citoyens</a>
+        <a href="auth/reports">Rapports</a>
+        <a href="auth/service" class="active">Service</a>
+        <a href="messages">Messages</a>
+
+        <div class="logout">
+            <a href="/logout">Déconnexion</a>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <div class="topbar">
+            <h1>Prise de service</h1>
+            <span id="status" class="status-pill <%= serviceState === 'active' ? 'status-active' : (serviceState === 'paused' ? 'status-paused' : 'status-inactive') %>">
+                <%= serviceState === 'active' ? 'Prise de service' : (serviceState === 'paused' ? 'Pause' : 'Hors service') %>
+            </span>
+        </div>
+
+        <div class="service-box">
+
+            <h2>Temps de service</h2>
+            <p id="timer">00:00:00</p>
+            <p>Total aujourd'hui : <strong><%= totalDurationUser %></strong></p>
+
+            <div class="service-buttons">
+                <button id="startBtn" class="btn">Prendre service</button>
+                <button id="pauseBtn" class="btn">Pause</button>
+                <button id="resumeBtn" class="btn">Reprendre</button>
+                <button id="stopBtn" class="btn stop">Terminer service</button>
+            </div>
+
+        </div>
+
+        <div class="reports-list">
+            <h2>Classement heures de service</h2>
+            <% if (ranking && ranking.length > 0) { %>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Rang</th>
+                            <th>Agent</th>
+                            <th>Heures</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <% ranking.forEach((entry, index) => { %>
+                        <tr>
+                            <td><%= index + 1 %></td>
+                            <td><%= entry.username %></td>
+                            <td><%= entry.duration || '00:00:00' %></td>
+                        </tr>
+                    <% }) %>
+                    </tbody>
+                </table>
+            <% } else { %>
+                <p>Aucun temps de service enregistré.</p>
+            <% } %>
+        </div>
+
+    </div>
+
+</div>
+
+<script src="/js/service.js"></script>
+
+</body>
+</html>

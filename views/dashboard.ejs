@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FIB Portal</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <img src="/images/FIB.png" alt="Logo FIB">
+
+        <a href="/auth/dashboard" class="active">Dashboard</a>
+        <a href="/citizens">Citoyens</a>
+        <a href="/reports">Rapports</a>
+        <a href="/service">Service</a>
+        <a href="/messages">Messages</a>
+        <% if (user && user.accreditation === 1) { %>
+        <a href="/users/admin">Admin Utilisateurs</a>
+        <a href="/logs/admin">Admin Logs</a>
+        <% } %>
+
+        <div class="logout">
+            <a href="/logout">Déconnexion</a>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+            <div>
+                <h1>Dashboard</h1>
+                <p class="subtitle">Système interne sécurisé</p>
+            </div>
+
+            <div class="user-info">
+                <span>Agent : <%= user.username %></span>
+                <span class="online">● En ligne</span>
+            </div>
+        </div>
+
+        <!-- CARDS -->
+        <div class="cards">
+
+            <div class="card">
+                <h3>Agents en service</h3>
+                <p><%= onDuty || 0 %></p>
+                <span class="card-info">En service actuellement</span>
+            </div>
+
+            <div class="card">
+                <h3>Rapports</h3>
+                <p><%= totalReports || 0 %></p>
+                <span class="card-info">Total</span>
+            </div>
+
+            <div class="card">
+                <h3>Citoyens fichés</h3>
+                <p><%= totalCitizens || 0 %></p>
+                <span class="card-info">Total</span>
+            </div>
+
+            <div class="card">
+                <h3>Temps service total</h3>
+                <p><%= totalServiceDuration || '00:00:00' %></p>
+                <span class="card-info">Total cumulé</span>
+            </div>
+
+        </div>
+
+        <div class="activity">
+            <h2>Classement heures de service</h2>
+            <% if (serviceRanking && serviceRanking.length > 0) { %>
+                <% serviceRanking.forEach((entry, index) => { %>
+                    <div class="log">
+                        <span>#<%= index + 1 %></span> <%= entry.username %> - <%= entry.duration || '00:00:00' %>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <div class="log">Aucun service démarré.</div>
+            <% } %>
+        </div>
+
+        <!-- ACTIVITÉ RÉCENTE -->
+        <div class="activity">
+
+            <h2>Activité récente</h2>
+
+            <% recentReports.forEach(report => { %>
+            <div class="log">
+                <span>[<%= new Date(report.created_at).toLocaleTimeString() %>]</span> Nouveau rapport : <%= report.title %>
+            </div>
+            <% }) %>
+
+            <% recentCitizens.forEach(citizen => { %>
+            <div class="log">
+                <span>[Ajouté]</span> Citoyen ajouté : <%= citizen.prenom %> <%= citizen.nom %>
+            </div>
+            <% }) %>
+
+        </div>
+
+            <div class="log">
+                
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

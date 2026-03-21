@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin - Logs</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <img src="/images/FIB.png" alt="Logo FIB">
+
+        <a href="/auth/dashboard" class="active">Dashboard</a>
+        <a href="/citizens">Citoyens</a>
+        <a href="/reports">Rapports</a>
+        <a href="/service">Service</a>
+        <a href="/messages">Messages</a>
+        <% if (user && user.accreditation === 1) { %>
+        <a href="/users/admin">Admin Utilisateurs</a>
+        <a href="/logs/admin">Admin Logs</a>
+        <% } %>
+
+        <div class="logout">
+            <a href="/logout">Déconnexion</a>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+            <div>
+                <h1>📊 Logs du Système</h1>
+                <p class="subtitle">Historique des actions et événements (<%= logs.length %> entrées)</p>
+            </div>
+
+            <div class="user-info">
+                <span>Agent : <%= user.username %></span>
+                <span class="online">● En ligne</span>
+            </div>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="admin-content">
+            <!-- STATS -->
+            <div class="stats-grid">
+                <%
+                    const loginCount = logs.filter(l => l.action.includes('Connexion')).length;
+                    const registerCount = logs.filter(l => l.action.includes('inscrit')).length;
+                    const updateCount = logs.filter(l => l.action.includes('Mise à jour')).length;
+                    const reportCount = logs.filter(l => l.action.includes('Rapport')).length;
+                %>
+                <div class="stat-card">
+                    <div class="stat-icon">🔐</div>
+                    <div class="stat-number"><%= loginCount %></div>
+                    <div class="stat-label">Connexions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">👤</div>
+                    <div class="stat-number"><%= registerCount %></div>
+                    <div class="stat-label">Inscriptions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✏️</div>
+                    <div class="stat-number"><%= updateCount %></div>
+                    <div class="stat-label">Mises à jour</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📄</div>
+                    <div class="stat-number"><%= reportCount %></div>
+                    <div class="stat-label">Rapports</div>
+                </div>
+            </div>
+
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Action</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% logs.forEach(log => { %>
+                    <%
+                        let logClass = 'log-default';
+                        let icon = '📝';
+                        if (log.action.includes('Connexion')) {
+                            logClass = 'log-login';
+                            icon = '🔐';
+                        } else if (log.action.includes('inscrit')) {
+                            logClass = 'log-register';
+                            icon = '👤';
+                        } else if (log.action.includes('Mise à jour')) {
+                            logClass = 'log-update';
+                            icon = '✏️';
+                        } else if (log.action.includes('Rapport')) {
+                            logClass = 'log-report';
+                            icon = '📄';
+                        }
+                    %>
+                    <tr class="<%= logClass %>">
+                        <td><%= log.id %></td>
+                        <td><span class="log-icon"><%= icon %></span> <%= log.action %></td>
+                        <td><%= new Date(log.created_at).toLocaleString('fr-FR') %></td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

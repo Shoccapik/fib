@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FIB - Détails Citoyen</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="layout">
+
+    <div class="sidebar">
+        <img src="/images/FIB.png" alt="Logo FIB" class="sidebar-logo">
+        <a href="/auth/dashboard">Dashboard</a>
+        <a href="/citizens">Citoyens</a>
+        <a href="/reports">Rapports</a>
+        <a href="/service">Service</a>
+        <a href="/messages">Messages</a>
+        <a href="/users/admin">Admin Utilisateurs</a>
+        <a href="/logs/admin">Admin Logs</a>
+        <div class="logout">
+            <a href="/logout">Déconnexion</a>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="topbar">
+            <h1>Citoyen : <%= citizen.prenom %> <%= citizen.nom %></h1>
+        </div>
+
+        <div class="report-form">
+            <h2>Détails du citoyen</h2>
+            <p><strong>ID :</strong> <%= citizen.id %></p>
+            <p><strong>Nom :</strong> <%= citizen.nom %></p>
+            <p><strong>Prénom :</strong> <%= citizen.prenom %></p>
+            <p><strong>Date de naissance :</strong> <%= new Date(citizen.dob).toLocaleDateString('fr-FR') %></p>
+            <p><strong>Créé le :</strong> <%= citizen.created_at ? new Date(citizen.created_at).toLocaleString('fr-FR') : '—' %></p>
+
+            <a href="/citizens" class="btn">Retour à la liste</a>
+        </div>
+
+        <div class="reports-list">
+            <h2>Rapports où ce citoyen est mentionné / concerné</h2>
+            <% if (reports.length === 0) { %>
+                <p>Aucun rapport lié trouvé.</p>
+            <% } else { %>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Type</th>
+                            <th>Agent</th>
+                            <th>Personnes concernées</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% reports.forEach(report => { %>
+                            <tr>
+                                <td><a href="/reports/<%= report.id %>"><%= report.id %></a></td>
+                                <td><%= report.type %></td>
+                                <td><%= report.agent_username || 'Inconnu' %></td>
+                                <td><%= report.personnes_concernees %></td>
+                                <td><%= report.created_at ? new Date(report.created_at).toLocaleString('fr-FR') : '—' %></td>
+                                <td><a href="/reports/<%= report.id %>">Voir</a></td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            <% } %>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

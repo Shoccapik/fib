@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin - Gestion Utilisateurs</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <img src="/images/FIB.png" alt="Logo FIB">
+
+        <a href="/auth/dashboard" class="active">Dashboard</a>
+        <a href="/citizens">Citoyens</a>
+        <a href="/reports">Rapports</a>
+        <a href="/service">Service</a>
+        <a href="/messages">Messages</a>
+        <% if (user && user.grade === 'admin') { %>
+        <a href="/users/admin">Admin Utilisateurs</a>
+        <a href="/logs/admin">Admin Logs</a>
+        <% } %>
+
+        <div class="logout">
+            <a href="/logout">Déconnexion</a>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+            <div>
+                <h1>👥 Gestion des Utilisateurs</h1>
+                <p class="subtitle">Administration des comptes utilisateur (<%= users.length %> agents)</p>
+            </div>
+
+            <div class="user-info">
+                <span>Agent : <%= user.username %></span>
+                <span class="online">● En ligne</span>
+            </div>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="admin-content">
+            <!-- STATS -->
+            <div class="stats-grid">
+                <%
+                    const level1Count = users.filter(u => u.accreditation === 1).length;
+                    const level2Count = users.filter(u => u.accreditation === 2).length;
+                    const level3Count = users.filter(u => u.accreditation === 3).length;
+                    const level4Count = users.filter(u => u.accreditation === 4).length;
+                %>
+                <div class="stat-card">
+                    <div class="stat-icon">👑</div>
+                    <div class="stat-number"><%= level1Count %></div>
+                    <div class="stat-label">Niveau 1</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-number"><%= level2Count %></div>
+                    <div class="stat-label">Niveau 2</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🛡️</div>
+                    <div class="stat-number"><%= level3Count %></div>
+                    <div class="stat-label">Niveau 3</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🎓</div>
+                    <div class="stat-number"><%= level4Count %></div>
+                    <div class="stat-label">Niveau 4</div>
+                </div>
+            </div>
+
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Grade</th>
+                        <th>Accréditation</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% users.forEach(u => { %>
+                    <%
+                        let userClass = 'user-level-' + u.accreditation;
+                        let levelIcon = '';
+                        switch(u.accreditation) {
+                            case 1: levelIcon = '👑'; break;
+                            case 2: levelIcon = '⭐'; break;
+                            case 3: levelIcon = '🛡️'; break;
+                            case 4: levelIcon = '🎓'; break;
+                        }
+                    %>
+                    <tr class="<%= userClass %>">
+                        <td><%= u.id %></td>
+                        <td><%= u.username %></td>
+                        <td><span class="level-icon"><%= levelIcon %></span> <%= u.grade_title || 'Non défini' %></td>
+                        <td><span class="accred-badge accred-<%= u.accreditation %>">Niveau <%= u.accreditation %></span></td>
+                        <td>
+                            <% if (user.accreditation === 1) { %>
+                            <form method="POST" action="/users/admin/update" class="inline-form">
+                                <input type="hidden" name="userId" value="<%= u.id %>">
+                                <select name="grade_title">
+                                    <option value="" disabled>Choisir un grade</option>
+                                    <optgroup label="Niveau 1">
+                                        <option value="Director" <%= u.grade_title === 'Director' ? 'selected' : '' %>>Director</option>
+                                        <option value="Deputy Director" <%= u.grade_title === 'Deputy Director' ? 'selected' : '' %>>Deputy Director</option>
+                                        <option value="Associate Deputy Director" <%= u.grade_title === 'Associate Deputy Director' ? 'selected' : '' %>>Associate Deputy Director</option>
+                                    </optgroup>
+                                    <optgroup label="Niveau 2">
+                                        <option value="Special Agent In Charge" <%= u.grade_title === 'Special Agent In Charge' ? 'selected' : '' %>>Special Agent In Charge</option>
+                                        <option value="Assistant Special Agent In Charge" <%= u.grade_title === 'Assistant Special Agent In Charge' ? 'selected' : '' %>>Assistant Special Agent In Charge</option>
+                                        <option value="Deputy Special Agent In Charge" <%= u.grade_title === 'Deputy Special Agent In Charge' ? 'selected' : '' %>>Deputy Special Agent In Charge</option>
+                                        <option value="Supervisory Special Agent" <%= u.grade_title === 'Supervisory Special Agent' ? 'selected' : '' %>>Supervisory Special Agent</option>
+                                    </optgroup>
+                                    <optgroup label="Niveau 3">
+                                        <option value="Special Agent" <%= u.grade_title === 'Special Agent' ? 'selected' : '' %>>Special Agent</option>
+                                    </optgroup>
+                                    <optgroup label="Niveau 4">
+                                        <option value="Probation Agent" <%= u.grade_title === 'Probation Agent' ? 'selected' : '' %>>Probation Agent</option>
+                                    </optgroup>
+                                </select>
+                                <input type="number" name="accreditation" value="<%= u.accreditation %>" min="1" max="4">
+                                <button type="submit" class="btn-small">✏️ Mettre à jour</button>
+                            </form>
+                            <% } else { %>
+                            <span>Non autorisé</span>
+                            <% } %>
+                        </td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

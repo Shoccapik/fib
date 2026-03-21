@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inscription FIB</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="login-body">
+
+<div class="login-container">
+
+    <div class="login-box">
+
+        <img src="/images/FIB.png" alt="Logo du FIB" style="width: 80px; margin-bottom: 20px;">
+
+        <h1>Inscription</h1>
+        <p class="subtitle">Créer un nouveau compte FIB</p>
+
+        <form method="POST" action="/auth/register" id="registerForm">
+
+            <div class="input-group">
+                <input name="username" type="text" required>
+                <label>Nom d'utilisateur</label>
+            </div>
+
+            <div class="input-group">
+                <input type="password" name="password" id="password" required>
+                <label>Mot de passe</label>
+            </div>
+
+            <div class="input-group">
+                <select name="grade_title" required style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #334155; background: transparent; color: white;">
+                    <option value="" disabled selected>Choisir un grade</option>
+                    <optgroup label="Niveau 1">
+                        <option value="Director">Director</option>
+                        <option value="Deputy Director">Deputy Director</option>
+                        <option value="Associate Deputy Director">Associate Deputy Director</option>
+                    </optgroup>
+                    <optgroup label="Niveau 2">
+                        <option value="Special Agent In Charge">Special Agent In Charge</option>
+                        <option value="Assistant Special Agent In Charge">Assistant Special Agent In Charge</option>
+                        <option value="Deputy Special Agent In Charge">Deputy Special Agent In Charge</option>
+                        <option value="Supervisory Special Agent">Supervisory Special Agent</option>
+                    </optgroup>
+                    <optgroup label="Niveau 3">
+                        <option value="Special Agent">Special Agent</option>
+                    </optgroup>
+                    <optgroup label="Niveau 4">
+                        <option value="Probation Agent">Probation Agent</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <button class="btn" type="submit">S'inscrire</button>
+
+        </form>
+
+        <p style="margin-top: 20px;"><a href="/" style="color: #1f3cff;">Déjà un compte ? Se connecter</a></p>
+
+    </div>
+
+</div>
+
+<script>
+document.getElementById('registerForm').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if (password !== confirmPassword) {
+        e.preventDefault();
+        alert('Les mots de passe ne correspondent pas.');
+    }
+
+    if (password.length < 6) {
+        e.preventDefault();
+        alert('Le mot de passe doit contenir au moins 6 caractères.');
+    }
+});
+</script>
+
+</body>
+</html>

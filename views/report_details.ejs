@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Détails du rapport</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="layout">
+
+    <div class="sidebar">
+        <h2>FIB</h2>
+        <a href="/auth/dashboard">Dashboard</a>
+        <a href="/reports" class="active">Rapports</a>
+        <a href="/service">Service</a>
+        <div class="logout"><a href="/logout">Déconnexion</a></div>
+    </div>
+
+    <div class="main">
+        <div class="topbar">
+            <h1>Détails du rapport</h1>
+        </div>
+
+        <div class="report-details-card">
+            <h1><%= report.title %></h1>
+
+            <div class="report-details-meta">
+                <span><strong>Agent :</strong> <%= report.agent_username || 'Inconnu' %> (<%= report.agent_grade || 'N/A' %>)</span>
+                <span><strong>Créé le :</strong> <%= new Date(report.created_at).toLocaleString('fr-FR') %></span>
+                <span><strong>Niveau :</strong> <%= report.level === 1 ? 'Public' : report.level === 2 ? 'Confidentiel' : 'Secret' %></span>
+            </div>
+
+            <h2>Contenu</h2>
+            <div class="report-details-content"><%= report.content %></div>
+
+            <h2>Détails opérationnels</h2>
+            <div class="report-details-grid">
+                <div class="card"><strong>Personnes concernées</strong><br><%= report.personnes_concernees || '-' %></div>
+                <div class="card"><strong>Agents concernés</strong><br><%= report.agents_concernes || '-' %></div>
+                <div class="card"><strong>Véhicules</strong><br><%= report.vehicules || '-' %></div>
+                <div class="card"><strong>Plaques</strong><br><%= report.plaques || '-' %></div>
+                <div class="card"><strong>Armes</strong><br><%= report.armes || '-' %></div>
+                <div class="card"><strong>Numéros de série</strong><br><%= report.numeros_serie || '-' %></div>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:24px;">
+                <a href="/reports/<%= report.id %>/edit" class="btn-small">Éditer</a>
+                <form method="POST" action="/reports/<%= report.id %>/delete" onsubmit="return confirm('Voulez-vous vraiment supprimer ce rapport ?');" style="display:inline;">
+                    <button type="submit" class="btn-small" style="background: #ef4444;">Supprimer</button>
+                </form>
+                <a href="/reports" class="btn-back">Retour</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
