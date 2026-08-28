@@ -34,10 +34,11 @@ CREATE TABLE IF NOT EXISTS reports (
 
 CREATE TABLE messages(
 id INT AUTO_INCREMENT PRIMARY KEY,
-sender INT,
-receiver INT,
-title VARCHAR(100),
-content TEXT
+sender VARCHAR(50),
+receiver VARCHAR(50),
+subject VARCHAR(100),
+content TEXT,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE service_logs(

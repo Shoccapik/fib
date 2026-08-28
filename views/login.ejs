@@ -38,20 +38,4 @@
 
 </body>
 </html>
-<script>
-        const user = result[0]
-
-        const valid = await bcrypt.compare(password, user.password)
-
-        if (!valid) {
-            return res.send("Mot de passe incorrect")
-        }
-
-        req.session.user = user
-
-        res.redirect("/dashboard")
-    
-</script>
-
-</html>
 

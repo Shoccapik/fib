@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>FIB - Rapports</title>
+    <title>FIB - Messages</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -12,11 +12,11 @@
     <div class="sidebar">
         <h2>FIB</h2>
 
-        <a href="/dashboard">Dashboard</a>
-        <a href="#">Citoyens</a>
-        <a href="/reports" class="active">Rapports</a>
+        <a href="/auth/dashboard">Dashboard</a>
+        <a href="/citizens">Citoyens</a>
+        <a href="/reports">Rapports</a>
         <a href="/service">Service</a>
-        <a href="#">Messages</a>
+        <a href="/messages" class="active">Messages</a>
 
         <div class="logout">
             <a href="/logout">Déconnexion</a>
@@ -27,55 +27,53 @@
     <div class="main">
 
         <div class="topbar">
-            <h1>Rapports</h1>
+            <h1>Messages</h1>
+            <span class="subtitle">Messagerie interne sécurisée</span>
         </div>
 
-        <!-- FORMULAIRE -->
-        <div class="report-form">
-            <h2>Créer un rapport</h2>
+        <div class="message-layout">
+            <aside class="message-sidebar">
+                <a href="/messages" class="<%= folder === 'inbox' ? 'active' : '' %>">Boîte de réception</a>
+                <a href="/messages?folder=sent" class="<%= folder === 'sent' ? 'active' : '' %>">Messages envoyés</a>
+            </aside>
 
-            <form method="POST" action="/reports/create">
+            <section class="message-compose">
+                <h2>Nouveau message</h2>
+                <form method="POST" action="/messages/send">
+                    <select name="receiver" required>
+                        <option value="">Choisir un destinataire</option>
+                        <% users.forEach(recipient => { %>
+                            <option value="<%= recipient.username %>"><%= recipient.username %></option>
+                        <% }) %>
+                    </select>
+                    <input name="title" placeholder="Objet" maxlength="100" required>
+                    <textarea name="content" placeholder="Votre message..." required></textarea>
+                    <button class="btn" type="submit">Envoyer</button>
+                </form>
+            </section>
 
-                <input name="title" placeholder="Titre du rapport" required>
-
-                <textarea name="content" placeholder="Description..." required></textarea>
-
-                <select name="level">
-                    <option value="1">Public</option>
-                    <option value="2">Confidentiel</option>
-                    <option value="3">Secret</option>
-                </select>
-
-                <button class="btn">Créer</button>
-
-            </form>
-        </div>
-
-        <!-- LISTE DES RAPPORTS -->
-        <div class="reports-list">
-
-            <h2>Rapports récents</h2>
-
-            <% if (reports.length === 0) { %>
-                <p>Aucun rapport</p>
-            <% } %>
-
-            <% reports.forEach(report => { %>
-
-                <div class="report-card">
-
-                    <h3><%= report.title %></h3>
-                    <p><%= report.content %></p>
-
-                    <div class="meta">
-                        <span>Niveau : <%= report.level %></span>
-                        <span><%= report.created_at %></span>
-                    </div>
-
-                </div>
-
-            <% }) %>
-
+            <section class="message-list">
+                <h2><%= folder === 'sent' ? 'Messages envoyés' : 'Boîte de réception' %></h2>
+                <% if (messages.length === 0) { %>
+                    <p>Aucun message dans ce dossier.</p>
+                <% } else { %>
+                    <% messages.forEach(message => { %>
+                        <article class="message-card">
+                            <div class="message-card-header">
+                                <strong><%= message.title %></strong>
+                                <form method="POST" action="/messages/<%= message.id %>/delete">
+                                    <input type="hidden" name="folder" value="<%= folder %>">
+                                    <button class="message-delete" type="submit" aria-label="Supprimer le message">Supprimer</button>
+                                </form>
+                            </div>
+                            <p class="message-meta">
+                                <%= folder === 'sent' ? 'À' : 'De' %> : <%= folder === 'sent' ? message.receiver_name : message.sender_name %>
+                            </p>
+                            <p class="message-content"><%= message.content %></p>
+                        </article>
+                    <% }) %>
+                <% } %>
+            </section>
         </div>
 
     </div>

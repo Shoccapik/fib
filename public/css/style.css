@@ -911,3 +911,117 @@ input {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 20px;
 }
+
+/* MESSAGES */
+
+.message-layout {
+    display: grid;
+    grid-template-columns: 190px minmax(260px, 340px) minmax(320px, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.message-sidebar,
+.message-compose,
+.message-list {
+    background: #0f172a;
+    border: 1px solid #1f2937;
+    border-radius: 10px;
+    padding: 18px;
+}
+
+.message-sidebar a {
+    display: block;
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    color: #cbd5e1;
+    text-decoration: none;
+}
+
+.message-sidebar a:hover,
+.message-sidebar a.active {
+    background: #1e293b;
+    color: white;
+}
+
+.message-compose h2,
+.message-list h2 {
+    margin-bottom: 14px;
+    color: #1f90ff;
+}
+
+.message-compose input,
+.message-compose textarea,
+.message-compose select {
+    width: 100%;
+    margin: 0 0 10px;
+    padding: 10px;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    background: #020617;
+    color: white;
+}
+
+.message-compose textarea {
+    min-height: 130px;
+    resize: vertical;
+}
+
+.message-card {
+    padding: 14px 0;
+    border-bottom: 1px solid #263147;
+}
+
+.message-card:last-child {
+    border-bottom: 0;
+}
+
+.message-card-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: #f8fafc;
+}
+
+.message-meta {
+    margin-top: 5px;
+    color: #93c5fd;
+    font-size: 13px;
+}
+
+.message-content {
+    margin-top: 10px;
+    color: #cbd5e1;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.message-delete {
+    padding: 5px 8px;
+    border: 1px solid #7f1d1d;
+    border-radius: 5px;
+    background: transparent;
+    color: #fca5a5;
+    cursor: pointer;
+}
+
+@media (max-width: 900px) {
+    .message-layout {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .message-list {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 600px) {
+    .message-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .message-list {
+        grid-column: auto;
+    }
+}

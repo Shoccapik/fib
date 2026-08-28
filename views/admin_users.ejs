@@ -17,7 +17,7 @@
         <a href="/reports">Rapports</a>
         <a href="/service">Service</a>
         <a href="/messages">Messages</a>
-        <% if (user && user.grade === 'admin') { %>
+        <% if (user && user.accreditation <= 2) { %>
         <a href="/users/admin">Admin Utilisateurs</a>
         <a href="/logs/admin">Admin Logs</a>
         <% } %>
