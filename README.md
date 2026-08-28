@@ -1,4 +1,23 @@
-# FIB Portal - MDT pour GTA V RP
+<div align="center">
+
+# FIB Portal
+
+### MDT de communication et de gestion opérationnelle pour GTA V RP
+
+![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8%2B-4479A1?logo=mysql&logoColor=white)
+![EJS](https://img.shields.io/badge/View-EJS-B4CA65)
+
+**Une interface web interne pour les agents du FIB sur un serveur GTA V roleplay.**
+
+[Installation](#installation-locale) · [Fonctionnalités](#fonctionnalités) · [Structure](#organisation-du-projet)
+
+</div>
+
+<br>
+
+> FIB Portal centralise les informations, les rapports, la prise de service et la communication entre agents dans un seul MDT accessible depuis un navigateur.
 
 FIB Portal est une interface web de communication et de gestion opérationnelle, conçue comme un **MDT (Mobile Data Terminal)** pour un serveur de jeu **GTA V en roleplay (RP)**.
 
@@ -16,6 +35,17 @@ Dans le cadre du roleplay, le MDT représente le système informatique interne d
 - donner aux responsables une vue sur les agents, les activités et les logs système.
 
 Le projet fournit l'interface et la base de données du MDT. Il ne se connecte pas directement au client GTA V et ne remplace pas les scripts ou ressources du serveur de jeu.
+
+## Vue d'ensemble
+
+| Module | Utilité dans le RP | Accès |
+| --- | --- | --- |
+| Tableau de bord | Suivre l'activité globale du FIB | `/auth/dashboard` |
+| Citoyens | Créer et consulter les fiches citoyen | `/citizens` |
+| Rapports | Documenter les interventions et preuves | `/reports` |
+| Service | Gérer la prise de service et les pauses | `/service` |
+| Messages | Communiquer entre agents | `/messages` |
+| Administration | Gérer les accès et consulter les logs | `/users/admin`, `/logs/admin` |
 
 ## Fonctionnalités
 
@@ -71,6 +101,22 @@ Un agent peut démarrer son service, le mettre en pause, le reprendre et le term
 
 Les agents disposant d'une accréditation suffisante peuvent gérer les grades et les niveaux d'accès des utilisateurs. Les connexions, inscriptions, modifications et créations de rapports sont enregistrées dans les logs du système.
 
+## Fonctionnement
+
+```mermaid
+flowchart LR
+    Agent[Agent FIB] --> Login[Connexion]
+    Login --> MDT[MDT FIB Portal]
+    MDT --> Dashboard[Tableau de bord]
+    MDT --> Citizens[Dossiers citoyens]
+    MDT --> Reports[Rapports opérationnels]
+    MDT --> Service[Prise de service]
+    MDT --> Messages[Messagerie interne]
+    MDT --> Administration[Administration et logs]
+```
+
+Le MDT est un outil complémentaire au serveur GTA V : les agents effectuent leurs actions RP dans le jeu et utilisent FIB Portal pour consigner, consulter et partager les informations de leur organisation.
+
 ## Technologies utilisées
 
 - **Node.js** : environnement d'exécution JavaScript côté serveur.
@@ -90,6 +136,18 @@ Les agents disposant d'une accréditation suffisante peuvent gérer les grades e
 - Git pour cloner le dépôt.
 
 ## Installation locale
+
+### Démarrage rapide
+
+```bash
+git clone https://github.com/Shoccapik/fib.git
+cd fib
+npm install
+mysql -u root -p < database/schema.sql
+npm start
+```
+
+Puis ouvrez [http://localhost:3000](http://localhost:3000).
 
 ### 1. Récupérer le projet
 

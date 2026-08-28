@@ -27,33 +27,52 @@
     <div class="main">
 
         <div class="topbar">
-            <h1>Messages</h1>
-            <span class="subtitle">Messagerie interne sécurisée</span>
+            <div>
+                <p class="page-kicker">Communication interne</p>
+                <h1>Messages</h1>
+                <p class="subtitle">Messagerie interne sécurisée</p>
+            </div>
+            <div class="user-info">
+                <span>Agent : <strong><%= user.username %></strong></span>
+                <span class="online">● En ligne</span>
+            </div>
         </div>
 
         <div class="message-layout">
             <aside class="message-sidebar">
-                <a href="/messages" class="<%= folder === 'inbox' ? 'active' : '' %>">Boîte de réception</a>
-                <a href="/messages?folder=sent" class="<%= folder === 'sent' ? 'active' : '' %>">Messages envoyés</a>
+                <p class="message-sidebar-label">Dossiers</p>
+                <a href="/messages" class="<%= folder === 'inbox' ? 'active' : '' %>"><span>Boîte de réception</span><span class="folder-arrow">›</span></a>
+                <a href="/messages?folder=sent" class="<%= folder === 'sent' ? 'active' : '' %>"><span>Messages envoyés</span><span class="folder-arrow">›</span></a>
             </aside>
 
             <section class="message-compose">
+                <p class="section-kicker">Courrier</p>
                 <h2>Nouveau message</h2>
+                <p class="section-intro">Contactez un agent du FIB depuis votre espace sécurisé.</p>
                 <form method="POST" action="/messages/send">
-                    <select name="receiver" required>
+                    <label for="receiver">Destinataire</label>
+                    <select id="receiver" name="receiver" required>
                         <option value="">Choisir un destinataire</option>
                         <% users.forEach(recipient => { %>
                             <option value="<%= recipient.username %>"><%= recipient.username %></option>
                         <% }) %>
                     </select>
-                    <input name="title" placeholder="Objet" maxlength="100" required>
-                    <textarea name="content" placeholder="Votre message..." required></textarea>
+                    <label for="title">Objet</label>
+                    <input id="title" name="title" placeholder="Objet" maxlength="100" required>
+                    <label for="content">Message</label>
+                    <textarea id="content" name="content" placeholder="Votre message..." required></textarea>
                     <button class="btn" type="submit">Envoyer</button>
                 </form>
             </section>
 
             <section class="message-list">
-                <h2><%= folder === 'sent' ? 'Messages envoyés' : 'Boîte de réception' %></h2>
+                <div class="message-list-heading">
+                    <div>
+                        <p class="section-kicker">Dossier actif</p>
+                        <h2><%= folder === 'sent' ? 'Messages envoyés' : 'Boîte de réception' %></h2>
+                    </div>
+                    <span class="message-count"><%= messages.length %> message<%= messages.length > 1 ? 's' : '' %></span>
+                </div>
                 <% if (messages.length === 0) { %>
                     <p>Aucun message dans ce dossier.</p>
                 <% } else { %>
@@ -68,6 +87,7 @@
                             </div>
                             <p class="message-meta">
                                 <%= folder === 'sent' ? 'À' : 'De' %> : <%= folder === 'sent' ? message.receiver_name : message.sender_name %>
+                                <span class="message-date"><%= message.created_at ? new Date(message.created_at).toLocaleString('fr-FR') : '' %></span>
                             </p>
                             <p class="message-content"><%= message.content %></p>
                         </article>

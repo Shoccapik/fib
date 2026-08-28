@@ -914,62 +914,130 @@ input {
 
 /* MESSAGES */
 
+.page-kicker,
+.section-kicker,
+.message-sidebar-label {
+    margin-bottom: 6px;
+    color: #60a5fa;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+}
+
+.page-kicker {
+    margin-bottom: 4px;
+}
+
 .message-layout {
     display: grid;
-    grid-template-columns: 190px minmax(260px, 340px) minmax(320px, 1fr);
-    gap: 20px;
+    grid-template-columns: 210px minmax(330px, 380px) minmax(0, 1fr);
+    gap: 24px;
     align-items: start;
+    width: 100%;
+    max-width: 1440px;
 }
 
 .message-sidebar,
 .message-compose,
 .message-list {
-    background: #0f172a;
-    border: 1px solid #1f2937;
-    border-radius: 10px;
-    padding: 18px;
+    background: linear-gradient(145deg, #111c31 0%, #0c1425 100%);
+    border: 1px solid #23304a;
+    border-radius: 12px;
+    padding: 22px;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, .16);
+}
+
+.message-sidebar {
+    padding: 14px;
+}
+
+.message-sidebar-label {
+    padding: 5px 10px 8px;
+    color: #64748b;
 }
 
 .message-sidebar a {
-    display: block;
-    padding: 10px;
-    margin-bottom: 8px;
-    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 10px;
+    margin-bottom: 5px;
+    border: 1px solid transparent;
+    border-radius: 7px;
     color: #cbd5e1;
+    font-size: 14px;
     text-decoration: none;
+    transition: background-color .18s ease, border-color .18s ease, color .18s ease;
 }
 
 .message-sidebar a:hover,
 .message-sidebar a.active {
     background: #1e293b;
+    border-color: #334155;
     color: white;
+}
+
+.folder-arrow {
+    color: #64748b;
+    font-size: 20px;
+    line-height: 12px;
+}
+
+.message-sidebar a.active .folder-arrow {
+    color: #60a5fa;
 }
 
 .message-compose h2,
 .message-list h2 {
-    margin-bottom: 14px;
+    margin-bottom: 6px;
     color: #1f90ff;
+    font-size: 21px;
+}
+
+.section-intro {
+    margin-bottom: 18px;
+    color: #94a3b8;
+    font-size: 13px;
+    line-height: 1.5;
 }
 
 .message-compose input,
 .message-compose textarea,
 .message-compose select {
     width: 100%;
-    margin: 0 0 10px;
+    margin: 0 0 14px;
     padding: 10px;
     border: 1px solid #334155;
     border-radius: 6px;
     background: #020617;
     color: white;
+    outline: none;
+    transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.message-compose input:focus,
+.message-compose textarea:focus,
+.message-compose select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .14);
+}
+
+.message-compose label {
+    display: block;
+    margin-bottom: 6px;
+    color: #cbd5e1;
+    font-size: 12px;
+    font-weight: 600;
 }
 
 .message-compose textarea {
-    min-height: 130px;
+    min-height: 164px;
     resize: vertical;
 }
 
 .message-card {
-    padding: 14px 0;
+    padding: 18px 0;
     border-bottom: 1px solid #263147;
 }
 
@@ -984,15 +1052,47 @@ input {
     color: #f8fafc;
 }
 
+.message-card-header strong {
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+.message-list-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 4px;
+}
+
+.message-count {
+    padding: 5px 8px;
+    border: 1px solid #334155;
+    border-radius: 999px;
+    color: #93c5fd;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
 .message-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
     margin-top: 5px;
     color: #93c5fd;
     font-size: 13px;
 }
 
+.message-date {
+    color: #64748b;
+    font-size: 12px;
+    text-align: right;
+}
+
 .message-content {
     margin-top: 10px;
     color: #cbd5e1;
+    line-height: 1.55;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
@@ -1009,6 +1109,7 @@ input {
 @media (max-width: 900px) {
     .message-layout {
         grid-template-columns: 1fr 1fr;
+        gap: 18px;
     }
 
     .message-list {
@@ -1017,11 +1118,32 @@ input {
 }
 
 @media (max-width: 600px) {
+    .main {
+        padding: 18px;
+    }
+
+    .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 14px;
+    }
+
     .message-layout {
         grid-template-columns: 1fr;
+        gap: 14px;
     }
 
     .message-list {
         grid-column: auto;
+    }
+
+    .message-meta {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .message-date {
+        text-align: left;
     }
 }
