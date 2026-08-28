@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="public/images/FIB_V2.png" alt="Logo FIB" width="170">
+
 # FIB Portal
 
 ### MDT de communication et de gestion opérationnelle pour GTA V RP
@@ -11,7 +13,7 @@
 
 **Une interface web interne pour les agents du FIB sur un serveur GTA V roleplay.**
 
-[Installation](#installation-locale) · [Fonctionnalités](#fonctionnalités) · [Structure](#organisation-du-projet)
+[Installation](#installation-locale) · [Fonctionnalités](#fonctionnalités) · [Dossiers groupes](#dossiers-groupes) · [Structure](#organisation-du-projet)
 
 </div>
 
@@ -19,11 +21,19 @@
 
 > FIB Portal centralise les informations, les rapports, la prise de service et la communication entre agents dans un seul MDT accessible depuis un navigateur.
 
+<table align="center">
+<tr>
+<td>🛰️ <strong>Interface MDT</strong><br>Outil web du FIB</td>
+<td>🔐 <strong>Accès sécurisé</strong><br>Sessions agents</td>
+<td>📡 <strong>Communication</strong><br>Messagerie interne</td>
+</tr>
+</table>
+
 FIB Portal est une interface web de communication et de gestion opérationnelle, conçue comme un **MDT (Mobile Data Terminal)** pour un serveur de jeu **GTA V en roleplay (RP)**.
 
 L'objectif est de fournir aux agents du FIB une interface centralisée pour consulter les informations utiles à leurs interventions, rédiger des rapports, suivre leur prise de service et communiquer avec les autres membres de l'organisation. Le site fonctionne dans un navigateur et peut être utilisé comme outil complémentaire pendant les sessions RP.
 
-## Rôle du MDT en RP
+## 🎯 Rôle du MDT en RP
 
 Dans le cadre du roleplay, le MDT représente le système informatique interne du FIB. Il permet notamment de :
 
@@ -36,27 +46,28 @@ Dans le cadre du roleplay, le MDT représente le système informatique interne d
 
 Le projet fournit l'interface et la base de données du MDT. Il ne se connecte pas directement au client GTA V et ne remplace pas les scripts ou ressources du serveur de jeu.
 
-## Vue d'ensemble
+## 🗺️ Vue d'ensemble
 
 | Module | Utilité dans le RP | Accès |
 | --- | --- | --- |
-| Tableau de bord | Suivre l'activité globale du FIB | `/auth/dashboard` |
-| Citoyens | Créer et consulter les fiches citoyen | `/citizens` |
-| Rapports | Documenter les interventions et preuves | `/reports` |
-| Service | Gérer la prise de service et les pauses | `/service` |
-| Messages | Communiquer entre agents | `/messages` |
-| Administration | Gérer les accès et consulter les logs | `/users/admin`, `/logs/admin` |
+| 📊 Tableau de bord | Suivre l'activité globale du FIB | `/auth/dashboard` |
+| 👤 Citoyens | Créer et consulter les fiches citoyen | `/citizens` |
+| 📄 Rapports | Documenter les interventions et preuves | `/reports` |
+| 📁 Dossiers groupes | Regrouper groupes, rapports et citoyens | `/groups` |
+| ⏱️ Service | Gérer la prise de service et les pauses | `/service` |
+| ✉️ Messages | Communiquer entre agents | `/messages` |
+| 🛡️ Administration | Gérer les accès et consulter les logs | `/users/admin`, `/logs/admin` |
 
-## Fonctionnalités
+## ✨ Fonctionnalités
 
-### Authentification
+### 🔐 Authentification
 
 - Connexion des agents avec identifiant et mot de passe.
 - Inscription avec grade et niveau d'accréditation.
 - Protection des pages internes par session.
 - Déconnexion de la session active.
 
-### Tableau de bord
+### 📊 Tableau de bord
 
 Le tableau de bord présente une vue synthétique de l'activité du FIB :
 
@@ -67,11 +78,13 @@ Le tableau de bord présente une vue synthétique de l'activité du FIB :
 - classement des heures de service ;
 - activité récente concernant les rapports et les citoyens.
 
-### Dossiers citoyens
+### 👤 Dossiers citoyens
 
-Les agents peuvent créer une fiche citoyen avec son nom, son prénom et sa date de naissance. Chaque fiche permet de retrouver les rapports dans lesquels le citoyen est mentionné ou concerné.
+Les agents peuvent créer une fiche citoyen avec son identité, sa date de naissance et ses informations opérationnelles : téléphone, profession, affiliation, permis, véhicules, habitations et armes enregistrées.
 
-### Rapports opérationnels
+Chaque fiche peut également contenir plusieurs photos ou images, consultables dans une galerie depuis le dossier citoyen. Les statuts **Recherché** et **Dangereux** sont activables indépendamment.
+
+### 📄 Rapports opérationnels
 
 Les rapports peuvent contenir :
 
@@ -83,7 +96,7 @@ Les rapports peuvent contenir :
 
 Un rapport peut être consulté, modifié ou supprimé. L'agent ayant créé le rapport est conservé dans la base de données.
 
-### Messagerie interne
+### ✉️ Messagerie interne
 
 La messagerie fonctionne comme une boîte mail réservée aux agents :
 
@@ -93,13 +106,39 @@ La messagerie fonctionne comme une boîte mail réservée aux agents :
 - objet et contenu du message ;
 - suppression des messages reçus ou envoyés par leur propriétaire.
 
-### Prise de service
+### ⏱️ Prise de service
 
 Un agent peut démarrer son service, le mettre en pause, le reprendre et le terminer. Les durées sont enregistrées dans MySQL et utilisées dans le classement affiché sur le tableau de bord.
 
-### Administration et logs
+### 🛡️ Administration et logs
 
 Les agents disposant d'une accréditation suffisante peuvent gérer les grades et les niveaux d'accès des utilisateurs. Les connexions, inscriptions, modifications et créations de rapports sont enregistrées dans les logs du système.
+
+## 📁 Dossiers groupes
+
+Un dossier groupe permet de centraliser le renseignement sur une organisation ou un groupe actif dans le RP. Il peut contenir :
+
+- 🏷️ un nom de groupe ;
+- 📣 ses revendications ;
+- 🗺️ ses zones d'opération régulières ;
+- 🏚️ sa planque connue ;
+- 📄 les rapports qui lui sont affiliés ;
+- 👤 les fiches citoyens qui lui sont rattachées.
+
+### Créer un dossier
+
+Depuis la page `/reports`, choisissez le type **Dossier groupe** dans la fiche de création. Seul le nom est obligatoire ; les revendications, zones et planque peuvent être complétées plus tard.
+
+Pour rattacher un rapport existant, sélectionnez un dossier groupe dans le formulaire. Pour rattacher un citoyen, choisissez le groupe depuis la création ou la modification de sa fiche.
+
+```mermaid
+graph TD
+    D[Dossier groupe] --> R[Rapports affiliés]
+    D --> C[Fiches citoyens affiliées]
+    D --> I[Revendications]
+    D --> Z[Zones d'opération]
+    D --> P[Planque connue]
+```
 
 ## Fonctionnement
 
@@ -231,6 +270,7 @@ fib/
 - `/auth/dashboard` : tableau de bord ;
 - `/citizens` : dossiers citoyens ;
 - `/reports` : rapports opérationnels ;
+- `/groups` : dossiers groupes et informations de renseignement ;
 - `/service` : prise de service ;
 - `/messages` : messagerie interne ;
 - `/users/admin` : administration des utilisateurs ;

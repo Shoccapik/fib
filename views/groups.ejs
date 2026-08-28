@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dossiers groupes - FIB</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="layout">
+    <div class="sidebar">
+        <img src="/images/FIB_V2.png" alt="Logo FIB" class="sidebar-logo">
+        <a href="/auth/dashboard">Dashboard</a>
+        <a href="/citizens">Citoyens</a>
+        <a href="/reports" class="active">Rapports</a>
+        <a href="/groups" class="active">Dossiers groupes</a>
+        <a href="/service">Service</a>
+        <a href="/messages">Messages</a>
+        <% if (user && user.accreditation <= 2) { %><a href="/users/admin">Admin Utilisateurs</a><a href="/logs/admin">Admin Logs</a><% } %>
+        <div class="logout"><a href="/logout">Déconnexion</a></div>
+    </div>
+    <main class="main">
+        <div class="topbar">
+            <div><p class="page-kicker">Renseignement FIB</p><h1>Dossiers groupes</h1><p class="subtitle">Regroupez les rapports et fiches citoyens par affiliation.</p></div>
+            <span class="reports-count"><%= groups.length %> dossier<%= groups.length > 1 ? 's' : '' %></span>
+        </div>
+        <section class="report-form group-create-form">
+            <div class="report-form-heading"><div><p class="section-kicker">Nouveau dossier</p><h2>Créer un dossier groupe</h2></div><span class="form-badge">FIB / MDT</span></div>
+            <form method="POST" action="/groups/create">
+                <input name="name" placeholder="Nom du groupe" maxlength="100" required>
+                <textarea name="claims" placeholder="Revendications"></textarea>
+                <textarea name="operating_places" placeholder="Zones d'opération régulières"></textarea>
+                <input name="hideout" placeholder="Planque connue" maxlength="255">
+                <button class="btn" type="submit">Créer le dossier</button>
+            </form>
+        </section>
+        <section class="reports-list group-index-list">
+            <div class="reports-heading"><div><p class="section-kicker">Base de renseignement</p><h2>Dossiers existants</h2></div></div>
+            <% if (!groups.length) { %><p class="empty-dashboard">Aucun dossier groupe créé.</p><% } %>
+            <% groups.forEach(group => { %><a class="group-index-row" href="/groups/<%= group.id %>"><span class="group-index-mark">G</span><span><strong><%= group.name %></strong><small>Ouvrir le dossier de renseignement</small></span><span class="group-row-arrow">›</span></a><% }) %>
+        </section>
+    </main>
+</div>
+</body>
+</html>

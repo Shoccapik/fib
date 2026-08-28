@@ -36,6 +36,7 @@
                     <option value="2" <%= report.level === 2 ? 'selected' : '' %>>Confidentiel</option>
                     <option value="3" <%= report.level === 3 ? 'selected' : '' %>>Secret</option>
                 </select>
+                <input name="group_name" value="<%= report.group_name || '' %>" placeholder="Dossier groupe (affiliation)">
 
                 <input name="personnes_concernees" value="<%= report.personnes_concernees %>" placeholder="Personnes concernées">
                 <input name="agents_concernes" value="<%= report.agents_concernes %>" placeholder="Agents concernés">

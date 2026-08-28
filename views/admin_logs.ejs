@@ -80,6 +80,8 @@
                     <tr>
                         <th>ID</th>
                         <th>Action</th>
+                        <th>Agent</th>
+                        <th>Autorisation</th>
                         <th>Date</th>
                     </tr>
                 </thead>
@@ -100,11 +102,16 @@
                         } else if (log.action.includes('Rapport')) {
                             logClass = 'log-report';
                             icon = '📄';
+                        } else if (log.action.includes('Modification citoyen')) {
+                            logClass = 'log-update';
+                            icon = '🧾';
                         }
                     %>
                     <tr class="<%= logClass %>">
                         <td><%= log.id %></td>
-                        <td><span class="log-icon"><%= icon %></span> <%= log.action %></td>
+                        <td><span class="log-icon"><%= icon %></span> <%= log.display_action || log.action %></td>
+                        <td><%= log.actor_username || 'Système' %></td>
+                        <td><span class="log-authorization <%= log.authorization === 'ACCORDEE' ? 'authorized' : log.authorization === 'REFUSEE' ? 'denied' : 'unknown' %>"><%= log.authorization || 'Non précisée' %></span></td>
                         <td><%= new Date(log.created_at).toLocaleString('fr-FR') %></td>
                     </tr>
                     <% }) %>

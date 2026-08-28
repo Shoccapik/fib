@@ -45,10 +45,30 @@
                 </div>
                 <span class="form-badge">FIB / MDT</span>
             </div>
-            <form method="POST" action="/citizens/create">
+            <form method="POST" action="/citizens/create" enctype="multipart/form-data">
                 <input name="nom" placeholder="Nom" aria-label="Nom" required>
                 <input name="prenom" placeholder="Prénom" aria-label="Prénom" required>
                 <input name="dob" type="date" aria-label="Date de naissance" required>
+                <input name="phone" type="tel" placeholder="Numéro de téléphone" aria-label="Numéro de téléphone">
+                <input name="job" placeholder="Profession / job" aria-label="Profession ou job">
+                <input name="affiliation" placeholder="Affiliation / groupe" aria-label="Affiliation ou groupe">
+                <select name="group_id" aria-label="Dossier groupe">
+                    <option value="">Aucun dossier groupe</option>
+                    <% (groups || []).forEach(group => { %><option value="<%= group.id %>"><%= group.name %></option><% }) %>
+                </select>
+                <input name="permits" placeholder="Permis détenus" aria-label="Permis détenus">
+                <input name="owned_vehicles" placeholder="Véhicules possédés" aria-label="Véhicules possédés">
+                <input name="residences" placeholder="Habitations" aria-label="Habitations">
+                <input name="registered_weapons" placeholder="Armes enregistrées" aria-label="Armes enregistrées">
+                <div class="photo-upload-field">
+                    <input id="citizen-photos" type="file" name="photos" accept="image/jpeg,image/png,image/webp,image/gif" multiple>
+                    <label for="citizen-photos"><span class="upload-icon">+</span><span><strong>Ajouter des photos</strong><small>JPG, PNG, WEBP ou GIF · 5 Mo max.</small></span></label>
+                    <span class="photo-file-name" data-empty="Aucune image sélectionnée">Aucune image sélectionnée</span>
+                </div>
+                <div class="citizen-switches">
+                    <label class="switch-field"><input type="checkbox" name="wanted"><span class="switch-control"></span><span>Recherché</span></label>
+                    <label class="switch-field"><input type="checkbox" name="dangerous"><span class="switch-control"></span><span>Dangereux</span></label>
+                </div>
                 <button class="btn" type="submit">Créer le dossier</button>
             </form>
         </div>
@@ -91,4 +111,13 @@
 </div>
 
 </body>
+<script>
+    const photoInput = document.querySelector('#citizen-photos')
+    const photoFileName = document.querySelector('.photo-file-name')
+    photoInput.addEventListener('change', () => {
+        const count = photoInput.files.length
+        photoFileName.textContent = count ? `${count} image${count > 1 ? 's' : ''} sélectionnée${count > 1 ? 's' : ''}` : photoFileName.dataset.empty
+        photoFileName.classList.toggle('has-files', count > 0)
+    })
+</script>
 </html>

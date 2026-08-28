@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dossier groupe - <%= groupName %></title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="layout">
+    <div class="sidebar">
+        <img src="/images/FIB_V2.png" alt="Logo FIB" class="sidebar-logo">
+        <a href="/auth/dashboard">Dashboard</a>
+        <a href="/citizens">Citoyens</a>
+        <a href="/reports" class="active">Rapports</a>
+        <a href="/groups">Dossiers groupes</a>
+        <a href="/service">Service</a>
+        <a href="/messages">Messages</a>
+        <% if (user && user.accreditation <= 2) { %>
+        <a href="/users/admin">Admin Utilisateurs</a>
+        <a href="/logs/admin">Admin Logs</a>
+        <% } %>
+        <div class="logout"><a href="/logout">Déconnexion</a></div>
+    </div>
+
+    <main class="main">
+        <div class="topbar">
+            <div>
+                <p class="page-kicker">Dossier de renseignement</p>
+                <h1><%= groupName %></h1>
+                <p class="subtitle">Rapports et citoyens associés à ce groupe</p>
+            </div>
+            <a href="/reports" class="btn-back">Retour aux rapports</a>
+        </div>
+
+        <div class="group-summary">
+            <div><span>Rapports</span><strong><%= reports.length %></strong></div>
+            <div><span>Citoyens affiliés</span><strong><%= citizens.length %></strong></div>
+            <div><span>Référence</span><strong><%= groupName %></strong></div>
+        </div>
+
+        <div class="group-intelligence">
+            <div><span>Revendications</span><strong><%= group.claims || 'Non renseignées' %></strong></div>
+            <div><span>Zones d'opération</span><strong><%= group.operating_places || 'Non renseignées' %></strong></div>
+            <div><span>Planque connue</span><strong><%= group.hideout || 'Non renseignée' %></strong></div>
+        </div>
+
+        <div class="group-content-grid">
+            <section class="reports-list">
+                <div class="citizen-section-heading"><div><p class="section-kicker">Traçabilité</p><h2>Rapports du groupe</h2></div></div>
+                <% if (reports.length === 0) { %><p class="empty-dashboard">Aucun rapport pour ce groupe.</p><% } %>
+                <% reports.forEach(report => { %>
+                    <a class="group-report-row" href="/reports/<%= report.id %>">
+                        <span class="report-reference">#<%= report.id %></span>
+                        <span><strong><%= report.title %></strong><small><%= report.content.substring(0, 120) %><%= report.content.length > 120 ? '...' : '' %></small></span>
+                        <span class="group-row-arrow">›</span>
+                    </a>
+                <% }) %>
+            </section>
+
+            <section class="reports-list">
+                <div class="citizen-section-heading"><div><p class="section-kicker">Base civile</p><h2>Citoyens affiliés</h2></div></div>
+                <% if (citizens.length === 0) { %><p class="empty-dashboard">Aucun citoyen avec cette affiliation.</p><% } %>
+                <% citizens.forEach(citizen => { %>
+                    <a class="group-citizen-row" href="/citizens/<%= citizen.id %>">
+                        <span class="citizen-avatar"><%= citizen.prenom.charAt(0).toUpperCase() %><%= citizen.nom.charAt(0).toUpperCase() %></span>
+                        <span><strong><%= citizen.prenom %> <%= citizen.nom %></strong><small>Dossier #<%= citizen.id %></small></span>
+                        <span class="group-row-arrow">›</span>
+                    </a>
+                <% }) %>
+            </section>
+        </div>
+    </main>
+</div>
+</body>
+</html>

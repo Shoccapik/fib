@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Modifier un citoyen - FIB</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="layout">
+    <div class="sidebar">
+        <img src="/images/FIB_V2.png" alt="Logo FIB" class="sidebar-logo">
+        <a href="/auth/dashboard">Dashboard</a>
+        <a href="/citizens" class="active">Citoyens</a>
+        <a href="/reports">Rapports</a>
+        <a href="/service">Service</a>
+        <a href="/messages">Messages</a>
+        <% if (user && user.accreditation <= 2) { %>
+        <a href="/users/admin">Admin Utilisateurs</a>
+        <a href="/logs/admin">Admin Logs</a>
+        <% } %>
+        <div class="logout"><a href="/logout">Déconnexion</a></div>
+    </div>
+
+    <div class="main">
+        <div class="topbar">
+            <div>
+                <p class="page-kicker">Mise à jour du dossier #<%= citizen.id %></p>
+                <h1>Modifier le citoyen</h1>
+                <p class="subtitle"><%= citizen.prenom %> <%= citizen.nom %></p>
+            </div>
+        </div>
+
+        <div class="report-form citizen-edit-form">
+            <div class="citizen-section-heading">
+                <div>
+                    <p class="section-kicker">Dossier citoyen</p>
+                    <h2>Informations générales</h2>
+                </div>
+                <span class="form-badge">ÉDITION</span>
+            </div>
+            <form method="POST" action="/citizens/<%= citizen.id %>/update" enctype="multipart/form-data">
+                <input name="nom" value="<%= citizen.nom || '' %>" placeholder="Nom" required>
+                <input name="prenom" value="<%= citizen.prenom || '' %>" placeholder="Prénom" required>
+                <input name="dob" type="date" value="<%= citizen.dob ? new Date(citizen.dob).toISOString().slice(0, 10) : '' %>" required>
+                <input name="phone" type="tel" value="<%= citizen.phone || '' %>" placeholder="Numéro de téléphone">
+                <input name="job" value="<%= citizen.job || '' %>" placeholder="Profession / job">
+                <input name="affiliation" value="<%= citizen.affiliation || '' %>" placeholder="Affiliation / groupe">
+                <select name="group_id" aria-label="Dossier groupe">
+                    <option value="">Aucun dossier groupe</option>
+                    <% (groups || []).forEach(group => { %><option value="<%= group.id %>" <%= Number(citizen.group_id) === Number(group.id) ? 'selected' : '' %>><%= group.name %></option><% }) %>
+                </select>
+                <input name="permits" value="<%= citizen.permits || '' %>" placeholder="Permis détenus">
+                <input name="owned_vehicles" value="<%= citizen.owned_vehicles || '' %>" placeholder="Véhicules possédés">
+                <input name="residences" value="<%= citizen.residences || '' %>" placeholder="Habitations">
+                <input name="registered_weapons" value="<%= citizen.registered_weapons || '' %>" placeholder="Armes enregistrées">
+                <div class="photo-upload-field">
+                    <input id="citizen-photos" type="file" name="photos" accept="image/jpeg,image/png,image/webp,image/gif" multiple>
+                    <label for="citizen-photos"><span class="upload-icon">+</span><span><strong>Ajouter des photos</strong><small>JPG, PNG, WEBP ou GIF · 5 Mo max.</small></span></label>
+                    <span class="photo-file-name" data-empty="Aucune image sélectionnée">Aucune image sélectionnée</span>
+                </div>
+                <div class="citizen-switches">
+                    <label class="switch-field"><input type="checkbox" name="wanted" <%= citizen.wanted ? 'checked' : '' %>><span class="switch-control"></span><span>Recherché</span></label>
+                    <label class="switch-field"><input type="checkbox" name="dangerous" <%= citizen.dangerous ? 'checked' : '' %>><span class="switch-control"></span><span>Dangereux</span></label>
+                </div>
+                <div class="citizen-edit-actions">
+                    <button class="btn" type="submit">Enregistrer les modifications</button>
+                    <a href="/citizens/<%= citizen.id %>" class="btn-back">Annuler</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+<script>
+    const photoInput = document.querySelector('#citizen-photos')
+    const photoFileName = document.querySelector('.photo-file-name')
+    photoInput.addEventListener('change', () => {
+        const count = photoInput.files.length
+        photoFileName.textContent = count ? `${count} image${count > 1 ? 's' : ''} sélectionnée${count > 1 ? 's' : ''}` : photoFileName.dataset.empty
+        photoFileName.classList.toggle('has-files', count > 0)
+    })
+</script>
+</html>

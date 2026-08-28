@@ -45,10 +45,40 @@
             <div class="citizen-facts">
                 <div><span>Référence</span><strong>#<%= citizen.id %></strong></div>
                 <div><span>Date de naissance</span><strong><%= new Date(citizen.dob).toLocaleDateString('fr-FR') %></strong></div>
+                <div><span>Téléphone</span><strong><%= citizen.phone || 'Non renseigné' %></strong></div>
+                <div><span>Profession</span><strong><%= citizen.job || 'Non renseignée' %></strong></div>
+                <div><span>Affiliation</span><strong><%= citizen.affiliation || 'Aucune' %></strong></div>
                 <div><span>Enregistré le</span><strong><%= citizen.created_at ? new Date(citizen.created_at).toLocaleDateString('fr-FR') : '—' %></strong></div>
             </div>
-            <a href="/citizens" class="btn-back citizen-back">Retour au registre</a>
+            <div class="citizen-alerts">
+                <span class="citizen-flag <%= citizen.wanted ? 'is-active wanted' : '' %>"><i></i><%= citizen.wanted ? 'Personne recherchée' : 'Pas recherché' %></span>
+                <span class="citizen-flag <%= citizen.dangerous ? 'is-active dangerous' : '' %>"><i></i><%= citizen.dangerous ? 'Individu dangereux' : 'Pas considéré dangereux' %></span>
+            </div>
+            <div class="citizen-profile-actions">
+                <a href="/citizens/<%= citizen.id %>/edit" class="btn-back citizen-back">Modifier la fiche</a>
+                <a href="/citizens" class="btn-back citizen-back">Retour au registre</a>
+            </div>
         </div>
+
+        <div class="citizen-information-grid">
+            <div class="citizen-info-block"><span>Permis détenus</span><strong><%= citizen.permits || 'Aucun permis renseigné' %></strong></div>
+            <div class="citizen-info-block"><span>Véhicules possédés</span><strong><%= citizen.owned_vehicles || 'Aucun véhicule renseigné' %></strong></div>
+            <div class="citizen-info-block"><span>Habitations</span><strong><%= citizen.residences || 'Aucune habitation renseignée' %></strong></div>
+            <div class="citizen-info-block"><span>Armes enregistrées</span><strong><%= citizen.registered_weapons || 'Aucune arme renseignée' %></strong></div>
+        </div>
+
+        <% let citizenPhotos = []; try { citizenPhotos = citizen.photo_paths ? JSON.parse(citizen.photo_paths) : [] } catch (error) { citizenPhotos = [] } %>
+        <% if (citizenPhotos.length > 0) { %>
+        <div class="citizen-photos-panel">
+            <div class="citizen-section-heading">
+                <div><p class="section-kicker">Pièces visuelles</p><h2>Photos du dossier</h2></div>
+                <span class="reports-count"><%= citizenPhotos.length %> image<%= citizenPhotos.length > 1 ? 's' : '' %></span>
+            </div>
+            <div class="citizen-photo-grid">
+                <% citizenPhotos.forEach(photo => { %><a href="<%= photo %>" target="_blank" rel="noreferrer"><img src="<%= photo %>" alt="Photo du dossier citoyen"></a><% }) %>
+            </div>
+        </div>
+        <% } %>
 
         <div class="reports-list">
             <div class="citizen-section-heading">

@@ -34,6 +34,7 @@
                 <span><strong>Agent :</strong> <%= report.agent_username || 'Inconnu' %> (<%= report.agent_grade || 'N/A' %>)</span>
                 <span><strong>Créé le :</strong> <%= new Date(report.created_at).toLocaleString('fr-FR') %></span>
                 <span><strong>Niveau :</strong> <%= report.level === 1 ? 'Public' : report.level === 2 ? 'Confidentiel' : 'Secret' %></span>
+                <% if (report.group_name || report.group_id) { %><span><strong>Dossier groupe :</strong> <%= report.group_name || ('Groupe #' + report.group_id) %></span><% } %>
             </div>
 
             <h2>Contenu</h2>

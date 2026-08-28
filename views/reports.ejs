@@ -15,6 +15,7 @@
         <a href="/auth/dashboard">Dashboard</a>
         <a href="/citizens">Citoyens</a>
         <a href="/reports" class="active">Rapports</a>
+        <a href="/groups">Dossiers groupes</a>
         <a href="/service">Service</a>
         <a href="/messages">Messages</a>
         <% if (user && user.accreditation <= 2) { %>
@@ -54,6 +55,14 @@
 
             <form method="POST" action="/reports/create">
 
+                <div class="report-field report-field-type">
+                    <label for="report-type">Type de rapport</label>
+                    <select id="report-type" name="report_type">
+                        <option value="Compte-rendu">Compte-rendu opérationnel</option>
+                        <option value="Dossier">Dossier groupe</option>
+                    </select>
+                </div>
+
                 <div class="report-field report-field-title">
                     <label for="report-title">Titre du rapport</label>
                     <input id="report-title" name="title" placeholder="Titre du rapport" required>
@@ -71,6 +80,29 @@
                 <div class="report-field report-field-wide">
                     <label for="report-content">Description</label>
                     <textarea id="report-content" name="content" placeholder="Décrivez les faits, le contexte et les actions menées..." required></textarea>
+                </div>
+
+                <div class="report-field report-field-group">
+                    <label for="report-group">Rattacher à un groupe existant</label>
+                    <select id="report-group" name="group_id">
+                        <option value="">Aucun groupe</option>
+                        <% (groups || []).forEach(group => { %><option value="<%= group.id %>"><%= group.name %></option><% }) %>
+                    </select>
+                </div>
+
+                <div class="report-dossier-fields">
+                    <div class="report-field">
+                        <label for="report-claims">Revendications</label>
+                        <textarea id="report-claims" name="claims" placeholder="Activités, revendications ou faits connus..."></textarea>
+                    </div>
+                    <div class="report-field">
+                        <label for="report-places">Zones d'opération régulières</label>
+                        <textarea id="report-places" name="operating_places" placeholder="Quartiers, routes ou secteurs fréquentés..."></textarea>
+                    </div>
+                    <div class="report-field report-field-wide">
+                        <label for="report-hideout">Planque connue</label>
+                        <input id="report-hideout" name="hideout" placeholder="Adresse ou lieu de repli connu" maxlength="255">
+                    </div>
                 </div>
 
                 <div class="report-operational-fields">
@@ -110,6 +142,9 @@
                         <span class="report-reference">Dossier #<%= report.id %></span>
                         <span class="report-level level-<%= report.level %>"><%= report.level === 1 ? 'Public' : report.level === 2 ? 'Confidentiel' : 'Secret' %></span>
                     </div>
+                    <% if (report.group_name || report.group_id) { %>
+                    <a class="report-group-link" href="<%= report.group_id ? '/groups/' + report.group_id : '/reports/groups/' + encodeURIComponent(report.group_name) %>">Dossier groupe : <%= report.group_name || ('Groupe #' + report.group_id) %> <span>›</span></a>
+                    <% } %>
                     <h3><a href="/reports/<%= report.id %>"><%= report.title %></a></h3>
                     <p class="report-preview"><%= report.content.substring(0, 190) %><%= report.content.length > 190 ? '...' : '' %></p>
 
@@ -137,4 +172,17 @@
 </div>
 
 </body>
+<script>
+    const reportType = document.querySelector('#report-type')
+    const dossierFields = document.querySelector('.report-dossier-fields')
+    function updateReportType() {
+        const isDossier = reportType.value === 'Dossier'
+        dossierFields.classList.toggle('is-visible', isDossier)
+        dossierFields.querySelectorAll('textarea, input').forEach(field => { field.required = false })
+        document.querySelector('#report-title').previousElementSibling.textContent = isDossier ? 'Nom du dossier' : 'Titre du rapport'
+        document.querySelector('#report-content').required = !isDossier
+    }
+    reportType.addEventListener('change', updateReportType)
+    updateReportType()
+</script>
 </html>

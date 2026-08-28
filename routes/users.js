@@ -22,26 +22,27 @@ router.get("/admin", isAdmin, (req,res)=>{
 
 router.post("/admin/update", isAdmin, (req,res)=>{
     const {userId, grade_title, accreditation} = req.body
+    const officialGrades = [
+        "Director",
+        "Deputy Director",
+        "Associate Deputy Director",
+        "Special Agent In Charge",
+        "Assistant Special Agent In Charge",
+        "Deputy Special Agent In Charge",
+        "Supervisory Special Agent",
+        "Special Agent",
+        "Probation Agent"
+    ]
 
-    const gradeLevels = {
-        "Director": 1,
-        "Deputy Director": 1,
-        "Associate Deputy Director": 1,
-        "Special Agent In Charge": 2,
-        "Assistant Special Agent In Charge": 2,
-        "Deputy Special Agent In Charge": 2,
-        "Supervisory Special Agent": 2,
-        "Special Agent": 3,
-        "Probation Agent": 4
-    }
+    const selectedGrade = officialGrades.includes(grade_title) ? grade_title : null
+    const selectedAccreditation = Number.parseInt(accreditation, 10)
+    const officialAccreditation = [1, 2, 3, 4].includes(selectedAccreditation) ? selectedAccreditation : 4
 
-    const computedAccreditation = gradeLevels[grade_title] || accreditation || 4
-
-    db.query("UPDATE users SET grade_title = ?, accreditation = ? WHERE id = ?", [grade_title, computedAccreditation, userId], (err)=>{
+    db.query("UPDATE users SET grade_title = ?, accreditation = ? WHERE id = ?", [selectedGrade, officialAccreditation, userId], (err)=>{
         if(err) return res.send("Erreur mise à jour")
 
         // Log the update
-        db.query("INSERT INTO logs (action) VALUES (?)", [`Mise à jour utilisateur ID ${userId}: grade_title=${grade_title}, accreditation=${computedAccreditation}`], (logErr)=>{
+        db.query("INSERT INTO logs (action) VALUES (?)", [`Mise à jour utilisateur ID ${userId}: grade_title=${selectedGrade || 'Non défini'}, accreditation=${officialAccreditation}`], (logErr)=>{
             if(logErr) console.error("Erreur log:", logErr)
         })
 

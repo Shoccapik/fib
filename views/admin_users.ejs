@@ -106,27 +106,34 @@
                             <% if (user.accreditation === 1) { %>
                             <form method="POST" action="/users/admin/update" class="inline-form">
                                 <input type="hidden" name="userId" value="<%= u.id %>">
-                                <select name="grade_title">
+                                <label class="admin-field-label" for="grade-<%= u.id %>">Grade</label>
+                                <select id="grade-<%= u.id %>" name="grade_title">
                                     <option value="" disabled>Choisir un grade</option>
-                                    <optgroup label="Niveau 1">
+                                    <optgroup label="Grades - Direction">
                                         <option value="Director" <%= u.grade_title === 'Director' ? 'selected' : '' %>>Director</option>
                                         <option value="Deputy Director" <%= u.grade_title === 'Deputy Director' ? 'selected' : '' %>>Deputy Director</option>
                                         <option value="Associate Deputy Director" <%= u.grade_title === 'Associate Deputy Director' ? 'selected' : '' %>>Associate Deputy Director</option>
                                     </optgroup>
-                                    <optgroup label="Niveau 2">
+                                    <optgroup label="Grades - Commandement">
                                         <option value="Special Agent In Charge" <%= u.grade_title === 'Special Agent In Charge' ? 'selected' : '' %>>Special Agent In Charge</option>
                                         <option value="Assistant Special Agent In Charge" <%= u.grade_title === 'Assistant Special Agent In Charge' ? 'selected' : '' %>>Assistant Special Agent In Charge</option>
                                         <option value="Deputy Special Agent In Charge" <%= u.grade_title === 'Deputy Special Agent In Charge' ? 'selected' : '' %>>Deputy Special Agent In Charge</option>
                                         <option value="Supervisory Special Agent" <%= u.grade_title === 'Supervisory Special Agent' ? 'selected' : '' %>>Supervisory Special Agent</option>
                                     </optgroup>
-                                    <optgroup label="Niveau 3">
+                                    <optgroup label="Grades - Agent">
                                         <option value="Special Agent" <%= u.grade_title === 'Special Agent' ? 'selected' : '' %>>Special Agent</option>
                                     </optgroup>
-                                    <optgroup label="Niveau 4">
+                                    <optgroup label="Grades - Probatoire">
                                         <option value="Probation Agent" <%= u.grade_title === 'Probation Agent' ? 'selected' : '' %>>Probation Agent</option>
                                     </optgroup>
                                 </select>
-                                <input type="number" name="accreditation" value="<%= u.accreditation %>" min="1" max="4">
+                                <label class="admin-field-label" for="accreditation-<%= u.id %>">Accréditation</label>
+                                <select id="accreditation-<%= u.id %>" name="accreditation" aria-label="Niveau d'accréditation">
+                                    <option value="1" <%= u.accreditation === 1 ? 'selected' : '' %>>Niveau 1</option>
+                                    <option value="2" <%= u.accreditation === 2 ? 'selected' : '' %>>Niveau 2</option>
+                                    <option value="3" <%= u.accreditation === 3 ? 'selected' : '' %>>Niveau 3</option>
+                                    <option value="4" <%= u.accreditation === 4 ? 'selected' : '' %>>Niveau 4</option>
+                                </select>
                                 <button type="submit" class="btn-small">✏️ Mettre à jour</button>
                             </form>
                             <% } else { %>

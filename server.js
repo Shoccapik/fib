@@ -42,6 +42,7 @@ app.use('/users', require('./routes/users'));
 app.use('/citizens', require('./routes/citizens'));
 app.use('/messages', require('./routes/messages'));
 app.use('/reports', require('./routes/reports'));
+app.use('/groups', require('./routes/groups'));
 app.use('/service', require('./routes/service'));
 app.use('/logs', require('./routes/logs'));
 
