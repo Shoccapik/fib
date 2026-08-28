@@ -45,7 +45,8 @@ CREATE TABLE service_logs(
 id INT AUTO_INCREMENT PRIMARY KEY,
 user_id INT,
 start_time DATETIME,
-end_time DATETIME
+end_time DATETIME,
+pause_time DATETIME
 );
 
 CREATE TABLE logs(

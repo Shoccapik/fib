@@ -9,12 +9,16 @@
 <div class="layout">
 
     <div class="sidebar">
-        <h2>FIB</h2>
+        <img src="/images/FIB_V2.png" alt="Logo FIB" class="sidebar-logo">
         <a href="/auth/dashboard">Dashboard</a>
         <a href="/citizens">Citoyens</a>
         <a href="/reports" class="active">Rapports</a>
         <a href="/service">Service</a>
         <a href="/messages">Messages</a>
+        <% if (user && user.accreditation <= 2) { %>
+        <a href="/users/admin">Admin Utilisateurs</a>
+        <a href="/logs/admin">Admin Logs</a>
+        <% } %>
         <div class="logout"><a href="/logout">Déconnexion</a></div>
     </div>
 
@@ -45,12 +49,12 @@
                 <div class="card"><strong>Numéros de série</strong><br><%= report.numeros_serie || '-' %></div>
             </div>
 
-            <div style="display:flex; gap:10px; margin-top:24px;">
-                <a href="/reports/<%= report.id %>/edit" class="btn-small">Éditer</a>
-                <form method="POST" action="/reports/<%= report.id %>/delete" onsubmit="return confirm('Voulez-vous vraiment supprimer ce rapport ?');" style="display:inline;">
-                    <button type="submit" class="btn-small" style="background: #ef4444;">Supprimer</button>
+            <div class="report-actions">
+                <a href="/reports/<%= report.id %>/edit" class="btn-small report-action-primary">Éditer le rapport</a>
+                <form method="POST" action="/reports/<%= report.id %>/delete" onsubmit="return confirm('Voulez-vous vraiment supprimer ce rapport ?');">
+                    <button type="submit" class="btn-small report-action-danger">Supprimer</button>
                 </form>
-                <a href="/reports" class="btn-back">Retour</a>
+                <a href="/reports" class="btn-back report-action-back">Retour aux rapports</a>
             </div>
         </div>
     </div>

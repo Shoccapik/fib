@@ -41,6 +41,7 @@ router.get("/",auth,(req,res)=>{
                 }))
 
                 res.render("service", {
+                    user: req.session.user,
                     serviceState: state || 'inactive',
                     lastSegmentSeconds: lastSegmentSeconds || 0,
                     totalHoursUser: totalHoursUser || '0.00',
@@ -144,7 +145,7 @@ router.post("/pause",auth,(req,res)=>{
 router.post("/resume",auth,(req,res)=>{
     const userId = req.session.user.id
     console.log('POST /service/resume - userId:', userId)
-    db.query("UPDATE service_logs SET pause_time = NULL WHERE user_id=? AND end_time IS NULL AND pause_time IS NOT NULL", [userId], (err, result)=>{
+    db.query("UPDATE service_logs SET start_time = DATE_ADD(start_time, INTERVAL TIMESTAMPDIFF(SECOND, pause_time, NOW()) SECOND), pause_time = NULL WHERE user_id=? AND end_time IS NULL AND pause_time IS NOT NULL", [userId], (err, result)=>{
         if(err) {
             console.error('DB error in resume:', err)
             return res.status(500).send("Erreur")

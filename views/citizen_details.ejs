@@ -9,14 +9,16 @@
 <div class="layout">
 
     <div class="sidebar">
-        <img src="/images/FIB.png" alt="Logo FIB" class="sidebar-logo">
+        <img src="/images/FIB_V2.png" alt="Logo FIB" class="sidebar-logo">
         <a href="/auth/dashboard">Dashboard</a>
         <a href="/citizens">Citoyens</a>
         <a href="/reports">Rapports</a>
         <a href="/service">Service</a>
         <a href="/messages">Messages</a>
+        <% if (user && user.accreditation <= 2) { %>
         <a href="/users/admin">Admin Utilisateurs</a>
         <a href="/logs/admin">Admin Logs</a>
+        <% } %>
         <div class="logout">
             <a href="/logout">Déconnexion</a>
         </div>
@@ -24,24 +26,40 @@
 
     <div class="main">
         <div class="topbar">
-            <h1>Citoyen : <%= citizen.prenom %> <%= citizen.nom %></h1>
+            <div>
+                <p class="page-kicker">Dossier citoyen #<%= citizen.id %></p>
+                <h1><%= citizen.prenom %> <%= citizen.nom %></h1>
+                <p class="subtitle">Fiche consultable dans le registre du FIB</p>
+            </div>
         </div>
 
-        <div class="report-form">
-            <h2>Détails du citoyen</h2>
-            <p><strong>ID :</strong> <%= citizen.id %></p>
-            <p><strong>Nom :</strong> <%= citizen.nom %></p>
-            <p><strong>Prénom :</strong> <%= citizen.prenom %></p>
-            <p><strong>Date de naissance :</strong> <%= new Date(citizen.dob).toLocaleDateString('fr-FR') %></p>
-            <p><strong>Créé le :</strong> <%= citizen.created_at ? new Date(citizen.created_at).toLocaleString('fr-FR') : '—' %></p>
-
-            <a href="/citizens" class="btn">Retour à la liste</a>
+        <div class="citizen-profile">
+            <div class="citizen-profile-identity">
+                <div class="citizen-profile-avatar"><%= citizen.prenom.charAt(0).toUpperCase() %><%= citizen.nom.charAt(0).toUpperCase() %></div>
+                <div>
+                    <p class="section-kicker">Identité enregistrée</p>
+                    <h2><%= citizen.prenom %> <%= citizen.nom %></h2>
+                    <span class="citizen-status">Dossier actif</span>
+                </div>
+            </div>
+            <div class="citizen-facts">
+                <div><span>Référence</span><strong>#<%= citizen.id %></strong></div>
+                <div><span>Date de naissance</span><strong><%= new Date(citizen.dob).toLocaleDateString('fr-FR') %></strong></div>
+                <div><span>Enregistré le</span><strong><%= citizen.created_at ? new Date(citizen.created_at).toLocaleDateString('fr-FR') : '—' %></strong></div>
+            </div>
+            <a href="/citizens" class="btn-back citizen-back">Retour au registre</a>
         </div>
 
         <div class="reports-list">
-            <h2>Rapports où ce citoyen est mentionné / concerné</h2>
+            <div class="citizen-section-heading">
+                <div>
+                    <p class="section-kicker">Traçabilité opérationnelle</p>
+                    <h2>Rapports associés</h2>
+                </div>
+                <span class="reports-count"><%= reports.length %> rapport<%= reports.length > 1 ? 's' : '' %></span>
+            </div>
             <% if (reports.length === 0) { %>
-                <p>Aucun rapport lié trouvé.</p>
+                <p class="empty-dashboard">Aucun rapport lié trouvé.</p>
             <% } else { %>
                 <table class="data-table">
                     <thead>

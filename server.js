@@ -56,10 +56,6 @@ app.get("/logout", (req,res)=>{
     })
 })
 
-app.get("/service", (req, res) => {
-    res.render("service")
-})
-
 // Les routes /reports sont gérées par routes/reports.js via app.use('/reports', require('./routes/reports'))
 // (évite les conflits et permet /reports/:id)
 

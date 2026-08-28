@@ -9,12 +9,16 @@
 <div class="layout">
 
     <div class="sidebar">
-        <h2>FIB</h2>
+        <img src="/images/FIB_V2.png" alt="Logo FIB" class="sidebar-logo">
         <a href="/auth/dashboard">Dashboard</a>
         <a href="/citizens">Citoyens</a>
         <a href="/reports" class="active">Rapports</a>
         <a href="/service">Service</a>
         <a href="/messages">Messages</a>
+        <% if (user && user.accreditation <= 2) { %>
+        <a href="/users/admin">Admin Utilisateurs</a>
+        <a href="/logs/admin">Admin Logs</a>
+        <% } %>
         <div class="logout"><a href="/logout">Déconnexion</a></div>
     </div>
 
@@ -40,9 +44,9 @@
                 <input name="armes" value="<%= report.armes %>" placeholder="Armes">
                 <input name="numeros_serie" value="<%= report.numeros_serie %>" placeholder="Numéros de série">
 
-                <button class="btn" type="submit">Mettre à jour</button>
+                <button class="btn" type="submit">Enregistrer les modifications</button>
             </form>
-            <a href="/reports/<%= report.id %>" class="btn-small" style="margin-top:10px; display:inline-block;">Annuler</a>
+            <a href="/reports/<%= report.id %>" class="btn-back report-edit-back">Annuler et revenir au rapport</a>
         </div>
     </div>
 

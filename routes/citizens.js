@@ -10,7 +10,7 @@ router.get("/",auth,(req,res)=>{
             console.error("Erreur SELECT citizens:", err)
             return res.send("Erreur lors de la lecture des citoyens")
         }
-        res.render("citizens",{citizens:result || []})
+        res.render("citizens",{citizens:result || [], user: req.session.user})
     })
 
 })
@@ -53,7 +53,7 @@ router.get("/:id", auth, (req,res)=>{
                     return res.send("Erreur lors de la lecture des rapports")
                 }
 
-                res.render("citizen_details", {citizen, reports})
+                res.render("citizen_details", {citizen, reports, user: req.session.user})
             }
         )
     })

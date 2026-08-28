@@ -10,7 +10,7 @@
 
     <!-- SIDEBAR -->
     <div class="sidebar">
-        <img src="/images/FIB.png" alt="Logo FIB">
+        <img src="/images/FIB_V2.png" alt="Logo FIB" class="sidebar-logo">
 
         <a href="/auth/dashboard" class="active">Dashboard</a>
         <a href="/citizens">Citoyens</a>
@@ -72,41 +72,64 @@
 
         </div>
 
-        <div class="activity">
-            <h2>Classement heures de service</h2>
+        <div class="activity ranking-panel">
+            <div class="activity-heading">
+                <div>
+                    <p class="section-kicker">Performance opérationnelle</p>
+                    <h2>Classement heures de service</h2>
+                </div>
+                <span class="activity-caption">Top agents</span>
+            </div>
             <% if (serviceRanking && serviceRanking.length > 0) { %>
                 <% serviceRanking.forEach((entry, index) => { %>
-                    <div class="log">
-                        <span>#<%= index + 1 %></span> <%= entry.username %> - <%= entry.duration || '00:00:00' %>
+                    <div class="ranking-row">
+                        <span class="ranking-position"><%= index + 1 %></span>
+                        <div class="ranking-avatar"><%= entry.username.charAt(0).toUpperCase() %></div>
+                        <div class="ranking-agent">
+                            <strong><%= entry.username %></strong>
+                            <div class="ranking-track"><span style="width: <%= serviceRanking[0].hours ? Math.min(100, (entry.hours / serviceRanking[0].hours) * 100) : 0 %>%"></span></div>
+                        </div>
+                        <strong class="ranking-duration"><%= entry.duration || '00:00:00' %></strong>
                     </div>
                 <% }) %>
             <% } else { %>
-                <div class="log">Aucun service démarré.</div>
+                <div class="empty-dashboard">Aucun service démarré.</div>
             <% } %>
         </div>
 
         <!-- ACTIVITÉ RÉCENTE -->
-        <div class="activity">
-
-            <h2>Activité récente</h2>
+        <div class="activity recent-panel">
+            <div class="activity-heading">
+                <div>
+                    <p class="section-kicker">Journal du MDT</p>
+                    <h2>Activité récente</h2>
+                </div>
+                <span class="activity-caption">Dernières actions</span>
+            </div>
 
             <% recentReports.forEach(report => { %>
-            <div class="log">
-                <span>[<%= new Date(report.created_at).toLocaleTimeString() %>]</span> Nouveau rapport : <%= report.title %>
-            </div>
+            <a class="recent-item" href="/reports/<%= report.id %>">
+                <span class="recent-icon report-icon">R</span>
+                <span class="recent-item-content">
+                    <strong>Nouveau rapport</strong>
+                    <span><%= report.title %></span>
+                </span>
+                <time datetime="<%= report.created_at %>"><%= new Date(report.created_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'}) %></time>
+            </a>
             <% }) %>
 
             <% recentCitizens.forEach(citizen => { %>
-            <div class="log">
-                <span>[Ajouté]</span> Citoyen ajouté : <%= citizen.prenom %> <%= citizen.nom %>
-            </div>
+            <a class="recent-item" href="/citizens/<%= citizen.id %>">
+                <span class="recent-icon citizen-icon">C</span>
+                <span class="recent-item-content">
+                    <strong>Nouveau dossier citoyen</strong>
+                    <span><%= citizen.prenom %> <%= citizen.nom %></span>
+                </span>
+                <span class="recent-arrow">›</span>
+            </a>
             <% }) %>
 
         </div>
-
-            <div class="log">
-                
-            </div>
 
         </div>
 

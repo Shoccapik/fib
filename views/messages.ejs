@@ -10,13 +10,17 @@
 
     <!-- SIDEBAR -->
     <div class="sidebar">
-        <h2>FIB</h2>
+        <img src="/images/FIB_V2.png" alt="Logo FIB" class="sidebar-logo">
 
         <a href="/auth/dashboard">Dashboard</a>
         <a href="/citizens">Citoyens</a>
         <a href="/reports">Rapports</a>
         <a href="/service">Service</a>
         <a href="/messages" class="active">Messages</a>
+        <% if (user && user.accreditation <= 2) { %>
+        <a href="/users/admin">Admin Utilisateurs</a>
+        <a href="/logs/admin">Admin Logs</a>
+        <% } %>
 
         <div class="logout">
             <a href="/logout">Déconnexion</a>
@@ -40,60 +44,81 @@
 
         <div class="message-layout">
             <aside class="message-sidebar">
+                <button type="button" class="compose-link compose-trigger" aria-expanded="false" aria-controls="message-compose">Nouveau message</button>
                 <p class="message-sidebar-label">Dossiers</p>
                 <a href="/messages" class="<%= folder === 'inbox' ? 'active' : '' %>"><span>Boîte de réception</span><span class="folder-arrow">›</span></a>
                 <a href="/messages?folder=sent" class="<%= folder === 'sent' ? 'active' : '' %>"><span>Messages envoyés</span><span class="folder-arrow">›</span></a>
             </aside>
 
-            <section class="message-compose">
-                <p class="section-kicker">Courrier</p>
-                <h2>Nouveau message</h2>
-                <p class="section-intro">Contactez un agent du FIB depuis votre espace sécurisé.</p>
-                <form method="POST" action="/messages/send">
-                    <label for="receiver">Destinataire</label>
-                    <select id="receiver" name="receiver" required>
-                        <option value="">Choisir un destinataire</option>
-                        <% users.forEach(recipient => { %>
-                            <option value="<%= recipient.username %>"><%= recipient.username %></option>
-                        <% }) %>
-                    </select>
-                    <label for="title">Objet</label>
-                    <input id="title" name="title" placeholder="Objet" maxlength="100" required>
-                    <label for="content">Message</label>
-                    <textarea id="content" name="content" placeholder="Votre message..." required></textarea>
-                    <button class="btn" type="submit">Envoyer</button>
-                </form>
-            </section>
-
-            <section class="message-list">
-                <div class="message-list-heading">
-                    <div>
-                        <p class="section-kicker">Dossier actif</p>
-                        <h2><%= folder === 'sent' ? 'Messages envoyés' : 'Boîte de réception' %></h2>
+            <div class="message-main">
+                <section class="message-list">
+                    <div class="message-list-heading">
+                        <div>
+                            <p class="section-kicker">Dossier actif</p>
+                            <h2><%= folder === 'sent' ? 'Messages envoyés' : 'Boîte de réception' %></h2>
+                        </div>
+                        <span class="message-count"><%= messages.length %> message<%= messages.length > 1 ? 's' : '' %></span>
                     </div>
-                    <span class="message-count"><%= messages.length %> message<%= messages.length > 1 ? 's' : '' %></span>
-                </div>
-                <% if (messages.length === 0) { %>
-                    <p>Aucun message dans ce dossier.</p>
-                <% } else { %>
-                    <% messages.forEach(message => { %>
-                        <article class="message-card">
-                            <div class="message-card-header">
-                                <strong><%= message.title %></strong>
+                    <div class="message-list-toolbar">
+                        <span><%= folder === 'sent' ? 'Suivi des communications sortantes' : 'Communications reçues par le FIB' %></span>
+                    </div>
+                    <% if (messages.length === 0) { %>
+                        <p class="empty-messages">Aucun message dans ce dossier.</p>
+                    <% } else { %>
+                        <% messages.forEach(message => { %>
+                            <article class="message-card">
+                                <div class="message-avatar"><%= (folder === 'sent' ? message.receiver_name : message.sender_name).charAt(0).toUpperCase() %></div>
+                                <div class="message-card-body">
+                                    <div class="message-card-header">
+                                        <strong><%= folder === 'sent' ? message.receiver_name : message.sender_name %></strong>
+                                        <span class="message-date"><%= message.created_at ? new Date(message.created_at).toLocaleString('fr-FR') : '' %></span>
+                                    </div>
+                                    <p class="message-subject"><%= message.title %></p>
+                                    <p class="message-content"><%= message.content %></p>
+                                </div>
                                 <form method="POST" action="/messages/<%= message.id %>/delete">
                                     <input type="hidden" name="folder" value="<%= folder %>">
                                     <button class="message-delete" type="submit" aria-label="Supprimer le message">Supprimer</button>
                                 </form>
-                            </div>
-                            <p class="message-meta">
-                                <%= folder === 'sent' ? 'À' : 'De' %> : <%= folder === 'sent' ? message.receiver_name : message.sender_name %>
-                                <span class="message-date"><%= message.created_at ? new Date(message.created_at).toLocaleString('fr-FR') : '' %></span>
-                            </p>
-                            <p class="message-content"><%= message.content %></p>
-                        </article>
-                    <% }) %>
-                <% } %>
-            </section>
+                            </article>
+                        <% }) %>
+                    <% } %>
+                </section>
+
+                <section id="message-compose" class="message-compose is-hidden" aria-hidden="true">
+                    <div class="compose-heading">
+                        <div>
+                            <p class="section-kicker">Communication sécurisée</p>
+                            <h2>Nouveau message</h2>
+                        </div>
+                        <div class="compose-heading-actions">
+                            <span class="compose-mark">FIB / MDT</span>
+                            <button type="button" class="compose-close" aria-label="Fermer la rédaction">×</button>
+                        </div>
+                    </div>
+                    <p class="section-intro">Contactez un agent du FIB depuis votre espace sécurisé.</p>
+                    <form method="POST" action="/messages/send">
+                        <div class="message-field">
+                            <label for="receiver">Destinataire</label>
+                            <select id="receiver" name="receiver" required>
+                                <option value="">Choisir un destinataire</option>
+                                <% users.forEach(recipient => { %>
+                                    <option value="<%= recipient.username %>"><%= recipient.username %></option>
+                                <% }) %>
+                            </select>
+                        </div>
+                        <div class="message-field">
+                            <label for="title">Objet</label>
+                            <input id="title" name="title" placeholder="Objet" maxlength="100" required>
+                        </div>
+                        <div class="message-field message-field-wide">
+                            <label for="content">Message</label>
+                            <textarea id="content" name="content" placeholder="Votre message..." required></textarea>
+                        </div>
+                        <button class="btn" type="submit">Envoyer le message</button>
+                    </form>
+                </section>
+            </div>
         </div>
 
     </div>
@@ -101,4 +126,20 @@
 </div>
 
 </body>
+<script>
+    const composeTrigger = document.querySelector('.compose-trigger')
+    const composePanel = document.querySelector('#message-compose')
+    const composeClose = document.querySelector('.compose-close')
+
+    function toggleComposer(isOpen) {
+        composePanel.classList.toggle('is-hidden', !isOpen)
+        composePanel.classList.toggle('is-open', isOpen)
+        composePanel.setAttribute('aria-hidden', String(!isOpen))
+        composeTrigger.setAttribute('aria-expanded', String(isOpen))
+        if(isOpen) document.querySelector('#receiver').focus()
+    }
+
+    composeTrigger.addEventListener('click', () => toggleComposer(true))
+    composeClose.addEventListener('click', () => toggleComposer(false))
+</script>
 </html>

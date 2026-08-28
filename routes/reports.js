@@ -11,7 +11,7 @@ router.get("/",auth,(req,res)=>{
             console.error("Erreur SELECT reports:", err)
             return res.send("Erreur lors de la lecture des rapports")
         }
-        res.render("reports",{reports:result})
+        res.render("reports",{reports:result, user: req.session.user})
     })
 
 })
@@ -29,7 +29,7 @@ router.get("/:id", auth, (req,res)=>{
             return res.send("Rapport non trouvé")
         }
 
-        res.render("report_details", {report: result[0]})
+        res.render("report_details", {report: result[0], user: req.session.user})
     })
 })
 
@@ -46,7 +46,7 @@ router.get("/:id/edit", auth, (req,res)=>{
             return res.send("Rapport non trouvé")
         }
 
-        res.render("report_edit", {report: result[0]})
+        res.render("report_edit", {report: result[0], user: req.session.user})
     })
 })
 

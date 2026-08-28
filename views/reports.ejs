@@ -10,13 +10,17 @@
 
     <!-- SIDEBAR -->
     <div class="sidebar">
-        <h2>FIB</h2>
+        <img src="/images/FIB_V2.png" alt="Logo FIB" class="sidebar-logo">
 
         <a href="/auth/dashboard">Dashboard</a>
         <a href="/citizens">Citoyens</a>
         <a href="/reports" class="active">Rapports</a>
         <a href="/service">Service</a>
         <a href="/messages">Messages</a>
+        <% if (user && user.accreditation <= 2) { %>
+        <a href="/users/admin">Admin Utilisateurs</a>
+        <a href="/logs/admin">Admin Logs</a>
+        <% } %>
 
         <div class="logout">
             <a href="/logout">Déconnexion</a>
@@ -27,33 +31,58 @@
     <div class="main">
 
         <div class="topbar">
-            <h1>Rapports</h1>
+            <div>
+                <p class="page-kicker">Dossiers opérationnels</p>
+                <h1>Rapports</h1>
+                <p class="subtitle">Centralisation des comptes rendus du FIB</p>
+            </div>
+            <div class="user-info">
+                <span>Base de rapports</span>
+                <strong><%= reports.length %> dossier<%= reports.length > 1 ? 's' : '' %></strong>
+            </div>
         </div>
 
         <!-- FORMULAIRE -->
-        <div class="report-form">
-            <h2>Créer un rapport</h2>
+        <div class="report-form report-create-form">
+            <div class="report-form-heading">
+                <div>
+                    <p class="section-kicker">Nouveau dossier</p>
+                    <h2>Créer un rapport</h2>
+                </div>
+                <span class="form-badge">MDT / FIB</span>
+            </div>
 
             <form method="POST" action="/reports/create">
 
-                <input name="title" placeholder="Titre du rapport" required>
+                <div class="report-field report-field-title">
+                    <label for="report-title">Titre du rapport</label>
+                    <input id="report-title" name="title" placeholder="Titre du rapport" required>
+                </div>
 
-                <textarea name="content" placeholder="Description..." required></textarea>
+                <div class="report-field report-field-level">
+                    <label for="report-level">Niveau de confidentialité</label>
+                    <select id="report-level" name="level">
+                        <option value="1">Public</option>
+                        <option value="2">Confidentiel</option>
+                        <option value="3">Secret</option>
+                    </select>
+                </div>
 
-                <input name="personnes_concernees" placeholder="Personnes concernées (virgule séparées)">
-                <input name="agents_concernes" placeholder="Agents concernés (virgule séparés)">
-                <input name="vehicules" placeholder="Véhicules utilisés">
-                <input name="plaques" placeholder="Plaques des véhicules">
-                <input name="armes" placeholder="Armes impliquées">
-                <input name="numeros_serie" placeholder="Numéros de série (arme)">
+                <div class="report-field report-field-wide">
+                    <label for="report-content">Description</label>
+                    <textarea id="report-content" name="content" placeholder="Décrivez les faits, le contexte et les actions menées..." required></textarea>
+                </div>
 
-                <select name="level">
-                    <option value="1">Public</option>
-                    <option value="2">Confidentiel</option>
-                    <option value="3">Secret</option>
-                </select>
+                <div class="report-operational-fields">
+                    <input name="personnes_concernees" placeholder="Personnes concernées">
+                    <input name="agents_concernes" placeholder="Agents concernés">
+                    <input name="vehicules" placeholder="Véhicules utilisés">
+                    <input name="plaques" placeholder="Plaques des véhicules">
+                    <input name="armes" placeholder="Armes impliquées">
+                    <input name="numeros_serie" placeholder="Numéros de série">
+                </div>
 
-                <button class="btn">Créer</button>
+                <button class="btn report-create-submit">Créer le rapport</button>
 
             </form>
         </div>
@@ -61,7 +90,13 @@
         <!-- LISTE DES RAPPORTS -->
         <div class="reports-list">
 
-            <h2>Rapports récents</h2>
+            <div class="reports-heading">
+                <div>
+                    <p class="section-kicker">Registre MDT</p>
+                    <h2>Rapports récents</h2>
+                </div>
+                <span class="reports-count"><%= reports.length %> résultat<%= reports.length > 1 ? 's' : '' %></span>
+            </div>
 
             <% if (reports.length === 0) { %>
                 <p>Aucun rapport</p>
@@ -71,19 +106,22 @@
 
                 <div class="report-card">
 
+                    <div class="report-card-topline">
+                        <span class="report-reference">Dossier #<%= report.id %></span>
+                        <span class="report-level level-<%= report.level %>"><%= report.level === 1 ? 'Public' : report.level === 2 ? 'Confidentiel' : 'Secret' %></span>
+                    </div>
                     <h3><a href="/reports/<%= report.id %>"><%= report.title %></a></h3>
-                    <p><%= report.content.substring(0, 190) %><%= report.content.length > 190 ? '...' : '' %></p>
+                    <p class="report-preview"><%= report.content.substring(0, 190) %><%= report.content.length > 190 ? '...' : '' %></p>
 
                     <div class="meta">
-                        <span>Niveau : <%= report.level === 1 ? 'Public' : report.level === 2 ? 'Confidentiel' : 'Secret' %></span>
-                        <span>Agent : <%= report.agent_username || 'Inconnu' %> (<%= report.agent_grade || 'N/A' %>)</span>
+                        <span>Agent : <strong><%= report.agent_username || 'Inconnu' %></strong></span>
                         <span><%= new Date(report.created_at).toLocaleString('fr-FR') %></span>
                     </div>
 
                     <div class="detail-tags">
-                        <span>Personnes : <%= report.personnes_concernees || '-'%></span>
-                        <span>Agents : <%= report.agents_concernes || '-'%></span>
-                        <span>Véhicules : <%= report.vehicules || '-'%></span>
+                        <span><b>Personnes</b> <%= report.personnes_concernees || '-'%></span>
+                        <span><b>Agents</b> <%= report.agents_concernes || '-'%></span>
+                        <span><b>Véhicules</b> <%= report.vehicules || '-'%></span>
                     </div>
 
                     
