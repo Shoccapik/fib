@@ -11,10 +11,6 @@ app.set("trust proxy", 1)
 app.use(express.static("public"))
 app.use(express.urlencoded({ extended: true }))
 
-console.log(bcrypt.hashSync("admin123", 10))
-console.log("Hash for 'admin':", bcrypt.hashSync("admin", 10))
-
-
 // session
 app.use(session({
     secret: "fib_secret",

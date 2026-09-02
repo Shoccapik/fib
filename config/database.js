@@ -1,12 +1,15 @@
 const mysql = require("mysql2")
 
-const db = mysql.createConnection({
+const db = mysql.createPool({
     host: "localhost",
     port: 3306,
     user: "admin12",
     password: "casti3l&shoccs",
     database: "fib_portal",
-    connectTimeout: 10000
+    connectTimeout: 10000,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 })
 
 const requiredColumns = [
@@ -28,18 +31,14 @@ function ensureColumn(table, column, definition, done){
 }
 
 db.ready = new Promise((resolve, reject)=>{
-    db.connect((err) => {
-        if (err) return reject(err)
-
-        let index = 0
-        const next = (migrationErr) => {
-            if(migrationErr) return reject(migrationErr)
-            if(index === requiredColumns.length) return resolve()
-            const [table, column, definition] = requiredColumns[index++]
-            ensureColumn(table, column, definition, next)
-        }
-        next()
-    })
+    let index = 0
+    const next = (migrationErr) => {
+        if(migrationErr) return reject(migrationErr)
+        if(index === requiredColumns.length) return resolve()
+        const [table, column, definition] = requiredColumns[index++]
+        ensureColumn(table, column, definition, next)
+    }
+    next()
 })
 
 db.ready
