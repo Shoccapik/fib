@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "db:init:mysql": "mysql -u admin12 -p\"casti3l&shoccs\" fib_portal < database/schema.sql"
   },
   "keywords": [],
   "author": "",

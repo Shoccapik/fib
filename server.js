@@ -7,6 +7,7 @@ const app = express()
 const db = require("./config/database")
 
 app.set("view engine", "ejs")
+app.set("trust proxy", 1)
 app.use(express.static("public"))
 app.use(express.urlencoded({ extended: true }))
 
@@ -18,7 +19,13 @@ console.log("Hash for 'admin':", bcrypt.hashSync("admin", 10))
 app.use(session({
     secret: "fib_secret",
     resave: false,
-    saveUninitialized: false
+    saveUninitialized: false,
+    proxy: true,
+    cookie: {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        sameSite: "lax"
+    }
 }))
 
 // FAKE USER (temporaire)
@@ -67,6 +74,9 @@ app.get("/logout",(req,res)=>{
     res.redirect("/")
 })
 
-app.listen(3000, () => {
-    console.log("Site lancé sur http://localhost:3000")
-})
+const port = Number(process.env.PORT || 3000)
+db.ready
+    .then(() => app.listen(port, () => {
+        console.log(`Site lancé sur le port ${port}`)
+    }))
+    .catch(() => process.exit(1))

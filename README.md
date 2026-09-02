@@ -213,16 +213,17 @@ mysql -u root -p < database/schema.sql
 
 Le script crée la base `fib_portal`, les tables nécessaires et un compte administrateur initial.
 
-Si votre installation MySQL utilise d'autres identifiants, adaptez la connexion dans `config/database.js` :
+La connexion Plesk est définie directement dans `config/database.js` :
 
 ```js
-const db = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "fib_portal"
-})
+host: "localhost",
+port: 3306,
+user: "admin12",
+password: "...",
+database: "fib_portal"
 ```
+
+Au démarrage, l'application vérifie également les colonnes ajoutées aux citoyens et aux rapports afin de mettre à niveau la base existante.
 
 ### 4. Démarrer le MDT
 

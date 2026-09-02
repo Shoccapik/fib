@@ -30,7 +30,8 @@ residences TEXT,
 registered_weapons TEXT,
 photo_paths TEXT,
 wanted BOOLEAN NOT NULL DEFAULT FALSE,
-dangerous BOOLEAN NOT NULL DEFAULT FALSE
+dangerous BOOLEAN NOT NULL DEFAULT FALSE,
+group_id INT
 );
 
 CREATE TABLE IF NOT EXISTS reports (
@@ -44,7 +45,13 @@ CREATE TABLE IF NOT EXISTS reports (
         operating_places TEXT,
         hideout VARCHAR(255),
         group_id INT,
-    agent_id INT,
+        agent_id INT,
+        personnes_concernees TEXT,
+        agents_concernes TEXT,
+        vehicules TEXT,
+        plaques TEXT,
+        armes TEXT,
+        numeros_serie TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
