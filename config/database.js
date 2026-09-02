@@ -5,7 +5,8 @@ const db = mysql.createConnection({
     port: 3306,
     user: "admin12",
     password: "casti3l&shoccs",
-    database: "fib_portal"
+    database: "fib_portal",
+    connectTimeout: 10000
 })
 
 const requiredColumns = [

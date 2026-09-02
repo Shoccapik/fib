@@ -75,8 +75,6 @@ app.get("/logout",(req,res)=>{
 })
 
 const port = Number(process.env.PORT || 3000)
-db.ready
-    .then(() => app.listen(port, () => {
-        console.log(`Site lancé sur le port ${port}`)
-    }))
-    .catch(() => process.exit(1))
+app.listen(port, () => {
+    console.log(`Site lancé sur le port ${port}`)
+})
