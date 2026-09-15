@@ -50,7 +50,7 @@ router.post("/send", auth, (req,res)=>{
     }
 
     db.query(
-        "INSERT INTO messages (sender, receiver, title, content) VALUES (?, ?, ?, ?)",
+        "INSERT INTO messages (sender, receiver, subject, content) VALUES (?, ?, ?, ?)",
         [req.session.user.username, receiver, title.trim(), content.trim()],
         (err)=>{
             if(err){
