@@ -838,6 +838,17 @@ input {
     background: #162dcc;
 }
 
+.citizen-delete {
+    margin-top: 0;
+    font: inherit;
+    cursor: pointer;
+    background: #b42318;
+}
+
+.citizen-delete:hover {
+    background: #8f1d14;
+}
+
 .online {
     color: #22c55e;
 }

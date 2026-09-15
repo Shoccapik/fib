@@ -183,6 +183,45 @@ router.post("/:id/update", auth, upload.array("photos", 8), (req,res)=>{
     })
 })
 
+router.post("/:id/delete", auth, (req,res)=>{
+    const citizenId = req.params.id
+    const actor = req.session.user.username
+
+    db.query("SELECT nom, prenom, photo_paths FROM citizens WHERE id = ?", [citizenId], (err, rows)=>{
+        if(err){
+            console.error("Erreur SELECT citoyen pour suppression:", err)
+            return res.status(500).send("Erreur lors de la lecture du citoyen")
+        }
+        if(rows.length === 0) return res.status(404).send("Citoyen introuvable")
+
+        const citizen = rows[0]
+        let photoPaths = []
+        try { photoPaths = citizen.photo_paths ? JSON.parse(citizen.photo_paths) : [] } catch { photoPaths = [] }
+
+        db.query("DELETE FROM citizens WHERE id = ?", [citizenId], (deleteErr)=>{
+            if(deleteErr){
+                console.error("Erreur DELETE citizen:", deleteErr)
+                return res.status(500).send("Erreur lors de la suppression du citoyen")
+            }
+
+            photoPaths.forEach(photoPath => {
+                if(typeof photoPath !== "string") return
+                const filePath = path.join(__dirname, "..", "public", photoPath.replace(/^\//, ""))
+                fs.unlink(filePath, unlinkErr => {
+                    if(unlinkErr && unlinkErr.code !== "ENOENT") console.error("Erreur suppression photo citoyen:", unlinkErr)
+                })
+            })
+
+            db.query(
+                "INSERT INTO logs (action, actor_username, authorization, target_type) VALUES (?, ?, ?, ?)",
+                [`Suppression citoyen #${citizenId} (${citizen.prenom} ${citizen.nom}) par ${actor}`, actor, "ACCORDEE", "CITOYEN"],
+                logErr => { if(logErr) console.error("Erreur log suppression citoyen:", logErr) }
+            )
+            res.redirect("/citizens")
+        })
+    })
+})
+
 router.get("/:id", auth, (req,res)=>{
     const citizenId = req.params.id
 

@@ -56,6 +56,9 @@
             </div>
             <div class="citizen-profile-actions">
                 <a href="/citizens/<%= citizen.id %>/edit" class="btn-back citizen-back">Modifier la fiche</a>
+                <form method="POST" action="/citizens/<%= citizen.id %>/delete" onsubmit="return confirm('Supprimer définitivement cette fiche citoyen et ses photos ? Les rapports associés seront conservés.');">
+                    <button type="submit" class="btn-back citizen-delete">Supprimer la fiche</button>
+                </form>
                 <a href="/citizens" class="btn-back citizen-back">Retour au registre</a>
             </div>
         </div>
