@@ -3,6 +3,8 @@ const router = express.Router()
 const db = require("../config/database")
 const auth = require("../middleware/auth")
 
+const pendingServiceEnds = new Map()
+
 function formatSeconds(seconds){
     const d = Math.floor(seconds / 86400)
     const h = Math.floor((seconds % 86400) / 3600)
@@ -11,6 +13,22 @@ function formatSeconds(seconds){
 
     const base = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
     return d > 0 ? `${d}j ${base}` : base
+}
+
+function finishService(userId, callback){
+    db.query(
+        `UPDATE service_logs
+         SET start_time = IF(
+                 pause_time IS NULL,
+                 start_time,
+                 DATE_ADD(start_time, INTERVAL TIMESTAMPDIFF(SECOND, pause_time, NOW()) SECOND)
+             ),
+             end_time = NOW(),
+             pause_time = NULL
+         WHERE user_id = ? AND end_time IS NULL`,
+        [userId],
+        callback
+    )
 }
 
 router.get("/",auth,(req,res)=>{
@@ -160,10 +178,46 @@ router.post("/resume",auth,(req,res)=>{
     })
 })
 
+router.post("/enter", auth, (req,res)=>{
+    const userId = req.session.user.id
+    const pendingEnd = pendingServiceEnds.get(userId)
+    if(pendingEnd){
+        clearTimeout(pendingEnd)
+        pendingServiceEnds.delete(userId)
+    }
+    res.sendStatus(204)
+})
+
+router.post("/leave", auth, (req,res)=>{
+    const userId = req.session.user.id
+    const pendingEnd = pendingServiceEnds.get(userId)
+    if(pendingEnd) clearTimeout(pendingEnd)
+
+    const timeout = setTimeout(()=>{
+        pendingServiceEnds.delete(userId)
+        finishService(userId, (err, result)=>{
+            if(err){
+                console.error('Erreur lors de la fin automatique du service:', err)
+                return
+            }
+            if(result.affectedRows > 0){
+                console.log(`Service terminé automatiquement pour l'utilisateur ${userId}`)
+            }
+        })
+    }, 2000)
+    pendingServiceEnds.set(userId, timeout)
+    res.sendStatus(204)
+})
+
 router.post("/end",auth,(req,res)=>{
     const userId = req.session.user.id
     console.log('POST /service/end - userId:', userId)
-    db.query("UPDATE service_logs SET end_time = NOW() WHERE user_id=? AND end_time IS NULL", [userId], (err, result)=>{
+    const pendingEnd = pendingServiceEnds.get(userId)
+    if(pendingEnd){
+        clearTimeout(pendingEnd)
+        pendingServiceEnds.delete(userId)
+    }
+    finishService(userId, (err, result)=>{
         if(err) {
             console.error('DB error in end:', err)
             return res.status(500).send("Erreur")
