@@ -2,14 +2,20 @@ const express = require("express")
 const session = require("express-session")
 const bcrypt = require("bcrypt")
 const logToWebhook = require("./utils/logger")
+const MySQLSessionStore = require("./utils/mysqlSessionStore")
 
 const app = express()
 const db = require("./config/database")
+const sessionDuration = 2 * 60 * 60 * 1000
 
 app.set("view engine", "ejs")
 app.set("trust proxy", 1)
 app.use(express.static("public"))
 app.use(express.urlencoded({ extended: true }))
+
+app.use((req, res, next)=>{
+    db.ready.then(()=>next()).catch(next)
+})
 
 // session
 app.use(session({
@@ -18,8 +24,9 @@ app.use(session({
     saveUninitialized: false,
     rolling: true,
     proxy: true,
+    store: new MySQLSessionStore(db, sessionDuration),
     cookie: {
-        maxAge: 2 * 60 * 60 * 1000,
+        maxAge: sessionDuration,
         secure: process.env.NODE_ENV === "production",
         httpOnly: true,
         sameSite: "lax"

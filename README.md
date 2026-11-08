@@ -66,6 +66,7 @@ Le projet fournit l'interface et la base de données du MDT. Il ne se connecte p
 - Inscription avec grade et niveau d'accréditation.
 - Protection des pages internes par session.
 - Déconnexion de la session active.
+- Sessions conservées en base de données et prolongées de deux heures après chaque requête.
 
 ### 📊 Tableau de bord
 

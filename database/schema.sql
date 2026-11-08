@@ -93,3 +93,10 @@ authorization VARCHAR(20),
 target_type VARCHAR(30),
 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS app_sessions(
+sid VARCHAR(128) NOT NULL PRIMARY KEY,
+expires BIGINT UNSIGNED NOT NULL,
+data MEDIUMTEXT NOT NULL,
+INDEX app_sessions_expires_idx (expires)
+);

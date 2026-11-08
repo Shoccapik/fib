@@ -23,11 +23,17 @@ router.post("/login", (req,res)=>{
         if(!valid) return res.send("Mot de passe incorrect")
 
         req.session.user = user
-        // Log the login
-        db.query("INSERT INTO logs (action) VALUES (?)", [`Connexion de l'utilisateur: ${results[0].username}`], (logErr)=>{
-            if(logErr) console.error("Erreur log:", logErr)
+        req.session.save(saveErr=>{
+            if(saveErr){
+                console.error("Erreur lors de l'enregistrement de la session:", saveErr)
+                return res.status(500).send("Erreur lors de l'ouverture de session")
+            }
+
+            db.query("INSERT INTO logs (action) VALUES (?)", [`Connexion de l'utilisateur: ${results[0].username}`], (logErr)=>{
+                if(logErr) console.error("Erreur log:", logErr)
+            })
+            res.redirect("/auth/dashboard")
         })
-        res.redirect("/auth/dashboard")
 
     })
 
