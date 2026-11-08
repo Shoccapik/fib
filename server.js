@@ -16,8 +16,10 @@ app.use(session({
     secret: "fib_secret",
     resave: false,
     saveUninitialized: false,
+    rolling: true,
     proxy: true,
     cookie: {
+        maxAge: 2 * 60 * 60 * 1000,
         secure: process.env.NODE_ENV === "production",
         httpOnly: true,
         sameSite: "lax"
