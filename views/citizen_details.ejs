@@ -65,9 +65,21 @@
 
         <div class="citizen-information-grid">
             <div class="citizen-info-block"><span>Permis détenus</span><strong><%= citizen.permits || 'Aucun permis renseigné' %></strong></div>
-            <div class="citizen-info-block"><span>Véhicules possédés</span><strong><%= citizen.owned_vehicles || 'Aucun véhicule renseigné' %></strong></div>
+            <div class="citizen-info-block"><span>Autres informations véhicules</span><strong><%= citizen.owned_vehicles || 'Non renseigné' %></strong></div>
             <div class="citizen-info-block"><span>Habitations</span><strong><%= citizen.residences || 'Aucune habitation renseignée' %></strong></div>
-            <div class="citizen-info-block"><span>Armes enregistrées</span><strong><%= citizen.registered_weapons || 'Aucune arme renseignée' %></strong></div>
+            <div class="citizen-info-block"><span>Autres informations sur les armes</span><strong><%= citizen.registered_weapons || 'Non renseigné' %></strong></div>
+            <section class="citizen-info-block citizen-assets-detail">
+                <span>Véhicules identifiés</span>
+                <% if (vehicleDetails.length) { %>
+                <ul><% vehicleDetails.forEach(vehicle => { %><li><strong><%= vehicle.first || 'Modèle non renseigné' %></strong><small>Plaque : <%= vehicle.second || 'Non renseignée' %></small></li><% }) %></ul>
+                <% } else { %><strong>Aucun véhicule détaillé</strong><% } %>
+            </section>
+            <section class="citizen-info-block citizen-assets-detail">
+                <span>Armes identifiées</span>
+                <% if (weaponDetails.length) { %>
+                <ul><% weaponDetails.forEach(weapon => { %><li><strong><%= weapon.first || 'Type non renseigné' %></strong><small>N° de série : <%= weapon.second || 'Non renseigné' %></small></li><% }) %></ul>
+                <% } else { %><strong>Aucune arme détaillée</strong><% } %>
+            </section>
         </div>
 
         <% let citizenPhotos = []; try { citizenPhotos = citizen.photo_paths ? JSON.parse(citizen.photo_paths) : [] } catch (error) { citizenPhotos = [] } %>

@@ -82,6 +82,8 @@ Le tableau de bord présente une vue synthétique de l'activité du FIB :
 
 Les agents peuvent créer une fiche citoyen avec son identité, sa date de naissance et ses informations opérationnelles : téléphone, profession, affiliation, permis, véhicules, habitations et armes enregistrées.
 
+Chaque fiche accepte également plusieurs véhicules avec leur modèle et leur plaque d'immatriculation, ainsi que plusieurs armes avec leur type et leur numéro de série. Ces informations restent associées par paire et sont consultables ou modifiables depuis la fiche citoyen.
+
 Chaque fiche peut également contenir plusieurs photos ou images, consultables dans une galerie depuis le dossier citoyen. Les statuts **Recherché** et **Dangereux** sont activables indépendamment.
 
 ### 📄 Rapports opérationnels
@@ -223,7 +225,7 @@ password: "...",
 database: "fib_portal"
 ```
 
-Au démarrage, l'application vérifie également les colonnes ajoutées aux citoyens et aux rapports afin de mettre à niveau la base existante.
+Au démarrage, l'application vérifie également les colonnes ajoutées aux citoyens et aux rapports, y compris les détails des véhicules et des armes, afin de mettre à niveau la base existante.
 
 ### 4. Démarrer le MDT
 

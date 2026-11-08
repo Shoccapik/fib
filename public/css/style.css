@@ -2278,6 +2278,78 @@ body:not(.login-body) {
         min-width: 160px;
     }
 
+    .citizen-asset-fields {
+        grid-column: 1 / -1;
+        padding: 16px;
+        border: 1px solid #263147;
+        border-radius: 12px;
+        background: rgba(15, 23, 42, .72);
+    }
+
+    .citizen-asset-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .citizen-asset-heading h3 {
+        margin: 0;
+        color: #e2e8f0;
+        font-size: 15px;
+    }
+
+    .citizen-asset-heading .section-kicker {
+        margin-bottom: 4px;
+    }
+
+    .citizen-asset-list {
+        display: grid;
+        gap: 10px;
+    }
+
+    .asset-entry-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 38px;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .citizen-create-form form .asset-entry-row input,
+    .citizen-edit-form form .asset-entry-row input {
+        min-width: 0;
+        margin: 0;
+    }
+
+    .asset-add-button,
+    .asset-remove-button {
+        border: 1px solid #334b75;
+        border-radius: 8px;
+        color: #bfdbfe;
+        background: #14264a;
+        cursor: pointer;
+        transition: border-color .18s ease, background-color .18s ease;
+    }
+
+    .asset-add-button {
+        padding: 8px 11px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .asset-remove-button {
+        width: 38px;
+        height: 38px;
+        font-size: 20px;
+    }
+
+    .asset-add-button:hover,
+    .asset-remove-button:hover {
+        border-color: #3b82f6;
+        background: #1e3a68;
+    }
+
     .citizen-switches {
         display: flex;
         align-items: center;
@@ -2599,6 +2671,26 @@ body:not(.login-body) {
         margin-bottom: 22px;
     }
 
+    .citizen-assets-detail ul {
+        display: grid;
+        gap: 10px;
+        margin: 10px 0 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .citizen-assets-detail li {
+        display: grid;
+        gap: 3px;
+        padding-top: 9px;
+        border-top: 1px solid #263147;
+    }
+
+    .citizen-assets-detail li small {
+        color: #93a4c2;
+        font-size: 12px;
+    }
+
     .citizen-info-block {
         display: grid;
         gap: 8px;
@@ -2803,6 +2895,23 @@ body:not(.login-body) {
 
         .citizen-information-grid {
             grid-template-columns: 1fr 1fr;
+        }
+
+        .asset-entry-row {
+            grid-template-columns: minmax(0, 1fr) 38px;
+        }
+
+        .asset-entry-row input {
+            grid-column: 1;
+        }
+
+        .asset-entry-row input + input {
+            grid-row: 2;
+        }
+
+        .asset-entry-row .asset-remove-button {
+            grid-column: 2;
+            grid-row: 1 / span 2;
         }
     }
 

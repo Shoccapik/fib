@@ -53,6 +53,36 @@
                 <input name="owned_vehicles" value="<%= citizen.owned_vehicles || '' %>" placeholder="Véhicules possédés">
                 <input name="residences" value="<%= citizen.residences || '' %>" placeholder="Habitations">
                 <input name="registered_weapons" value="<%= citizen.registered_weapons || '' %>" placeholder="Armes enregistrées">
+                <section class="citizen-asset-fields" aria-labelledby="citizen-vehicles-heading">
+                    <div class="citizen-asset-heading">
+                        <div><p class="section-kicker">Véhicules</p><h3 id="citizen-vehicles-heading">Véhicules identifiés</h3></div>
+                        <button class="asset-add-button" type="button" data-add-asset="vehicles">+ Ajouter un véhicule</button>
+                    </div>
+                    <div class="citizen-asset-list" data-asset-list="vehicles">
+                        <% (vehicleDetails.length ? vehicleDetails : [{first: '', second: ''}]).forEach(vehicle => { %>
+                        <div class="asset-entry-row">
+                            <input name="vehicle_model" value="<%= vehicle.first %>" placeholder="Modèle du véhicule" aria-label="Modèle du véhicule">
+                            <input name="vehicle_plate" value="<%= vehicle.second %>" placeholder="Plaque d'immatriculation" aria-label="Plaque d'immatriculation">
+                            <button class="asset-remove-button" type="button" aria-label="Supprimer ce véhicule">−</button>
+                        </div>
+                        <% }) %>
+                    </div>
+                </section>
+                <section class="citizen-asset-fields" aria-labelledby="citizen-weapons-heading">
+                    <div class="citizen-asset-heading">
+                        <div><p class="section-kicker">Armes</p><h3 id="citizen-weapons-heading">Armes identifiées</h3></div>
+                        <button class="asset-add-button" type="button" data-add-asset="weapons">+ Ajouter une arme</button>
+                    </div>
+                    <div class="citizen-asset-list" data-asset-list="weapons">
+                        <% (weaponDetails.length ? weaponDetails : [{first: '', second: ''}]).forEach(weapon => { %>
+                        <div class="asset-entry-row">
+                            <input name="weapon_type" value="<%= weapon.first %>" placeholder="Type / modèle de l'arme" aria-label="Type ou modèle de l'arme">
+                            <input name="weapon_serial" value="<%= weapon.second %>" placeholder="Numéro de série" aria-label="Numéro de série">
+                            <button class="asset-remove-button" type="button" aria-label="Supprimer cette arme">−</button>
+                        </div>
+                        <% }) %>
+                    </div>
+                </section>
                 <div class="photo-upload-field">
                     <input id="citizen-photos" type="file" name="photos" accept="image/jpeg,image/png,image/webp,image/gif" multiple>
                     <label for="citizen-photos"><span class="upload-icon">+</span><span><strong>Ajouter des photos</strong><small>JPG, PNG, WEBP ou GIF · 5 Mo max.</small></span></label>
@@ -73,6 +103,35 @@
 
 </body>
 <script>
+    const citizenForm = document.querySelector('.citizen-edit-form form')
+    const assetFields = {
+        vehicles: ['vehicle_model', 'vehicle_plate', 'Modèle du véhicule', "Plaque d'immatriculation", 'ce véhicule'],
+        weapons: ['weapon_type', 'weapon_serial', "Type / modèle de l'arme", 'Numéro de série', 'cette arme']
+    }
+    function createAssetRow(assetType){
+        const [firstName, secondName, firstPlaceholder, secondPlaceholder, removeLabel] = assetFields[assetType]
+        const row = document.createElement('div')
+        row.className = 'asset-entry-row'
+        row.innerHTML = `<input name="${firstName}" placeholder="${firstPlaceholder}"><input name="${secondName}" placeholder="${secondPlaceholder}"><button class="asset-remove-button" type="button" aria-label="Supprimer ${removeLabel}">−</button>`
+        return row
+    }
+
+    document.querySelectorAll('[data-add-asset]').forEach(button => {
+        button.addEventListener('click', () => {
+            document.querySelector(`[data-asset-list="${button.dataset.addAsset}"]`).append(createAssetRow(button.dataset.addAsset))
+        })
+    })
+
+    citizenForm.addEventListener('click', event => {
+        if(event.target.matches('.asset-remove-button')){
+            const list = event.target.closest('.citizen-asset-list')
+            event.target.closest('.asset-entry-row').remove()
+            if(!list.children.length){
+                list.append(createAssetRow(list.dataset.assetList))
+            }
+        }
+    })
+
     const photoInput = document.querySelector('#citizen-photos')
     const photoFileName = document.querySelector('.photo-file-name')
     photoInput.addEventListener('change', () => {

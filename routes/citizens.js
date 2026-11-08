@@ -36,13 +36,43 @@ const citizenFields = [
     { key: "affiliation", label: "Affiliation" },
     { key: "permits", label: "Permis" },
     { key: "owned_vehicles", label: "Véhicules possédés" },
+    { key: "vehicle_details", label: "Modèles et plaques" },
     { key: "residences", label: "Habitations" },
     { key: "registered_weapons", label: "Armes enregistrées" },
+    { key: "weapon_details", label: "Types et numéros de série" },
     { key: "wanted", label: "Recherché" },
     { key: "dangerous", label: "Dangereux" }
 ]
 
+function assetRows(body, firstField, secondField){
+    const values = field => {
+        const value = body[field]
+        return (Array.isArray(value) ? value : value === undefined ? [] : [value])
+            .map(item => String(item || "").trim())
+    }
+    const firstValues = values(firstField)
+    const secondValues = values(secondField)
+
+    return Array.from({length: Math.max(firstValues.length, secondValues.length)}, (_, index)=>({
+        first: firstValues[index] || "",
+        second: secondValues[index] || ""
+    })).filter(row => row.first || row.second)
+}
+
+function parseAssetRows(value){
+    if(!value) return []
+    try {
+        const rows = JSON.parse(value)
+        return Array.isArray(rows) ? rows : []
+    } catch(error) {
+        console.error("Erreur de lecture des équipements du citoyen:", error)
+        return []
+    }
+}
+
 function citizenValues(body){
+    const vehicleDetails = assetRows(body, "vehicle_model", "vehicle_plate")
+    const weaponDetails = assetRows(body, "weapon_type", "weapon_serial")
     return {
         nom: body.nom,
         prenom: body.prenom,
@@ -52,8 +82,10 @@ function citizenValues(body){
         affiliation: body.affiliation || null,
         permits: body.permits || null,
         owned_vehicles: body.owned_vehicles || null,
+        vehicle_details: vehicleDetails.length ? JSON.stringify(vehicleDetails) : null,
         residences: body.residences || null,
         registered_weapons: body.registered_weapons || null,
+        weapon_details: weaponDetails.length ? JSON.stringify(weaponDetails) : null,
         wanted: body.wanted === "on" ? 1 : 0,
         dangerous: body.dangerous === "on" ? 1 : 0
     }
@@ -61,6 +93,10 @@ function citizenValues(body){
 
 function displayValue(value, key){
     if(key === "wanted" || key === "dangerous") return Number(value) === 1 ? "Oui" : "Non"
+    if(key === "vehicle_details" || key === "weapon_details"){
+        const rows = parseAssetRows(value)
+        return rows.map(row => `${row.first} — ${row.second}`).join(", ") || "Non renseigné"
+    }
     if(key === "dob"){
         if(!value) return "Non renseigné"
         if(typeof value === "string"){
@@ -97,7 +133,14 @@ router.get("/:id/edit", auth, (req,res)=>{
         if(rows.length === 0) return res.status(404).send("Citoyen introuvable")
         db.query("SELECT id, name FROM groups ORDER BY name", (groupErr, groups)=>{
             if(groupErr) return res.status(500).send("Erreur lors de la lecture des groupes")
-            res.render("citizen_edit", {citizen: rows[0], groups: groups || [], user: req.session.user})
+            const citizen = rows[0]
+            res.render("citizen_edit", {
+                citizen,
+                vehicleDetails: parseAssetRows(citizen.vehicle_details),
+                weaponDetails: parseAssetRows(citizen.weapon_details),
+                groups: groups || [],
+                user: req.session.user
+            })
         })
     })
 })
@@ -108,18 +151,21 @@ router.post("/create", auth, upload.array("photos", 8), (req,res)=>{
         nom, prenom, dob, phone, job, affiliation,
         permits, owned_vehicles, residences, registered_weapons, group_id
     } = req.body
+    const values = citizenValues(req.body)
     const wanted = req.body.wanted === "on" ? 1 : 0
     const dangerous = req.body.dangerous === "on" ? 1 : 0
 
     db.query(
         `INSERT INTO citizens
             (nom, prenom, dob, phone, job, affiliation, permits, owned_vehicles,
-             residences, registered_weapons, photo_paths, group_id, wanted, dangerous)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             vehicle_details, residences, registered_weapons, weapon_details,
+             photo_paths, group_id, wanted, dangerous)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
             nom, prenom, dob, phone || null, job || null, affiliation || null,
-                permits || null, owned_vehicles || null, residences || null,
-                registered_weapons || null, JSON.stringify((req.files || []).map(file=>`/uploads/citizens/${file.filename}`)), group_id || null, wanted, dangerous
+                permits || null, owned_vehicles || null, values.vehicle_details,
+                residences || null, registered_weapons || null, values.weapon_details,
+                JSON.stringify((req.files || []).map(file=>`/uploads/citizens/${file.filename}`)), group_id || null, wanted, dangerous
         ],
         (err)=>{
             if(err){
@@ -157,12 +203,14 @@ router.post("/:id/update", auth, upload.array("photos", 8), (req,res)=>{
 
         const sql = `UPDATE citizens SET
             nom = ?, prenom = ?, dob = ?, phone = ?, job = ?, affiliation = ?,
-            permits = ?, owned_vehicles = ?, residences = ?, registered_weapons = ?,
+            permits = ?, owned_vehicles = ?, vehicle_details = ?, residences = ?,
+            registered_weapons = ?, weapon_details = ?,
             photo_paths = ?, group_id = ?, wanted = ?, dangerous = ? WHERE id = ?`
         db.query(sql, [
             values.nom, values.prenom, values.dob, values.phone, values.job,
-            values.affiliation, values.permits, values.owned_vehicles,
-            values.residences, values.registered_weapons, JSON.stringify(photoPaths), groupId,
+            values.affiliation, values.permits, values.owned_vehicles, values.vehicle_details,
+            values.residences, values.registered_weapons, values.weapon_details,
+            JSON.stringify(photoPaths), groupId,
             values.wanted, values.dangerous, req.params.id
         ], async (updateErr)=>{
             if(updateErr) return res.status(500).send("Erreur lors de la modification du citoyen")
@@ -247,7 +295,13 @@ router.get("/:id", auth, (req,res)=>{
                     return res.send("Erreur lors de la lecture des rapports")
                 }
 
-                res.render("citizen_details", {citizen, reports, user: req.session.user})
+                res.render("citizen_details", {
+                    citizen,
+                    vehicleDetails: parseAssetRows(citizen.vehicle_details),
+                    weaponDetails: parseAssetRows(citizen.weapon_details),
+                    reports,
+                    user: req.session.user
+                })
             }
         )
     })

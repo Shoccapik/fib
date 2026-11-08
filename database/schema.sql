@@ -31,7 +31,9 @@ registered_weapons TEXT,
 photo_paths TEXT,
 wanted BOOLEAN NOT NULL DEFAULT FALSE,
 dangerous BOOLEAN NOT NULL DEFAULT FALSE,
-group_id INT
+group_id INT,
+vehicle_details TEXT,
+weapon_details TEXT
 );
 
 CREATE TABLE IF NOT EXISTS reports (
@@ -91,4 +93,3 @@ authorization VARCHAR(20),
 target_type VARCHAR(30),
 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-

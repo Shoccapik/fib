@@ -14,6 +14,8 @@ const db = mysql.createPool({
 
 const requiredColumns = [
     ["citizens", "group_id", "INT NULL"],
+    ["citizens", "vehicle_details", "TEXT NULL"],
+    ["citizens", "weapon_details", "TEXT NULL"],
     ["reports", "personnes_concernees", "TEXT"],
     ["reports", "agents_concernes", "TEXT"],
     ["reports", "vehicules", "TEXT"],
