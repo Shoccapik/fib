@@ -1,84 +1,108 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-    <title>FIB - Service</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FIB - Gestion du service</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
 <div class="layout">
 
-    <!-- SIDEBAR -->
-    <div class="sidebar">
+    <nav class="sidebar" aria-label="Navigation principale">
         <img src="/images/FIB_V2.png" alt="Logo FIB" class="sidebar-logo">
-
         <a href="/auth/dashboard">Dashboard</a>
         <a href="/citizens">Citoyens</a>
         <a href="/reports">Rapports</a>
-        <a href="/service" class="active">Service</a>
+        <a href="/service" class="active" aria-current="page">Service</a>
         <a href="/messages">Messages</a>
         <% if (user && user.accreditation <= 2) { %>
         <a href="/users/admin">Admin Utilisateurs</a>
         <a href="/logs/admin">Admin Logs</a>
         <% } %>
+        <div class="logout"><a href="/logout">Déconnexion</a></div>
+    </nav>
 
-        <div class="logout">
-            <a href="/logout">Déconnexion</a>
-        </div>
-    </div>
-
-    <!-- MAIN -->
-    <div class="main">
-
-        <div class="topbar">
-            <h1>Prise de service</h1>
-            <span id="status" class="status-pill <%= serviceState === 'active' ? 'status-active' : (serviceState === 'paused' ? 'status-paused' : 'status-inactive') %>">
-                <%= serviceState === 'active' ? 'Prise de service' : (serviceState === 'paused' ? 'Pause' : 'Hors service') %>
+    <main class="main service-page">
+        <header class="topbar service-page-heading">
+            <div>
+                <p class="page-kicker">Gestion opérationnelle</p>
+                <h1>Prise de service</h1>
+                <p class="subtitle">Suivez votre temps et gérez votre disponibilité.</p>
+            </div>
+            <span id="status" class="status-pill <%= serviceState === 'active' ? 'status-active' : (serviceState === 'paused' ? 'status-paused' : 'status-inactive') %>" aria-live="polite">
+                <%= serviceState === 'active' ? 'En service' : (serviceState === 'paused' ? 'En pause' : 'Hors service') %>
             </span>
-        </div>
+        </header>
 
-        <div class="service-box">
+        <section class="service-overview" aria-label="Votre service">
+            <div class="service-box service-timer-card">
+                <div class="service-card-heading">
+                    <div>
+                        <p class="section-kicker">Session en cours</p>
+                        <h2>Durée de service</h2>
+                    </div>
+                    <span class="service-live-indicator" aria-hidden="true"></span>
+                </div>
 
-            <h2>Temps de service</h2>
-            <p id="timer">00:00:00</p>
-            <p>Total aujourd'hui : <strong><%= totalDurationUser %></strong></p>
+                <p id="timer" class="service-timer" role="timer" aria-live="off">00:00:00</p>
+                <p class="service-timer-caption">Le compteur reflète le temps actif de votre session.</p>
 
-            <div class="service-buttons">
-                <button id="startBtn" class="btn">Prendre service</button>
-                <button id="pauseBtn" class="btn">Pause</button>
-                <button id="resumeBtn" class="btn">Reprendre</button>
-                <button id="stopBtn" class="btn stop">Terminer service</button>
+                <div class="service-actions" aria-label="Actions de service">
+                    <button id="startBtn" class="btn service-action-primary" type="button">Prendre mon service</button>
+                    <button id="pauseBtn" class="btn service-action-pause" type="button">Mettre en pause</button>
+                    <button id="resumeBtn" class="btn service-action-resume" type="button">Reprendre le service</button>
+                    <button id="stopBtn" class="btn service-action-stop" type="button">Terminer le service</button>
+                </div>
             </div>
 
-        </div>
+            <aside class="service-summary-card">
+                <p class="section-kicker">Votre activité</p>
+                <h2>Temps enregistré</h2>
+                <p class="service-total-duration"><%= totalDurationUser || '00:00:00' %></p>
+                <p class="service-summary-caption">Cumul de vos services enregistrés</p>
+                <div class="service-summary-divider"></div>
+                <p class="service-summary-note">Pensez à mettre votre service en pause lorsque vous êtes indisponible.</p>
+            </aside>
+        </section>
 
-        <div class="reports-list">
-            <h2>Classement heures de service</h2>
+        <section class="reports-list service-ranking-panel">
+            <div class="activity-heading">
+                <div>
+                    <p class="section-kicker">Activité de l'équipe</p>
+                    <h2>Classement des heures de service</h2>
+                </div>
+                <span class="activity-caption">Top 5 agents</span>
+            </div>
+
             <% if (ranking && ranking.length > 0) { %>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Rang</th>
-                            <th>Agent</th>
-                            <th>Heures</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <div class="service-ranking-list">
                     <% ranking.forEach((entry, index) => { %>
-                        <tr>
-                            <td><%= index + 1 %></td>
-                            <td><%= entry.username %></td>
-                            <td><%= entry.duration || '00:00:00' %></td>
-                        </tr>
+                    <div class="ranking-row">
+                        <span class="ranking-position"><%= String(index + 1).padStart(2, '0') %></span>
+                        <div class="ranking-avatar"><%= entry.username.charAt(0).toUpperCase() %></div>
+                        <div class="ranking-agent">
+                            <strong><%= entry.username %></strong>
+                            <div class="ranking-track" aria-hidden="true">
+                                <span style="width: <%= ranking[0].totalSeconds ? Math.min(100, (entry.totalSeconds / ranking[0].totalSeconds) * 100) : 0 %>%"></span>
+                            </div>
+                        </div>
+                        <strong class="ranking-duration"><%= entry.duration || '00:00:00' %></strong>
+                    </div>
                     <% }) %>
-                    </tbody>
-                </table>
+                </div>
             <% } else { %>
-                <p>Aucun temps de service enregistré.</p>
+                <div class="service-ranking-empty">
+                    <span class="service-empty-mark" aria-hidden="true">—</span>
+                    <div>
+                        <strong>Aucun temps enregistré</strong>
+                        <p>Le classement apparaîtra dès qu’un agent aura pris son service.</p>
+                    </div>
+                </div>
             <% } %>
-        </div>
-
-    </div>
+        </section>
+    </main>
 
 </div>
 

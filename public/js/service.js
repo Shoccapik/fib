@@ -20,14 +20,14 @@ function setStatus(state) {
     statusEl.className = `status-pill status-${state}`
     switch(state){
         case 'active':
-            statusEl.textContent = 'Prise de service'
+            statusEl.textContent = 'En service'
             startBtn.disabled = true
             pauseBtn.disabled = false
             resumeBtn.disabled = true
             stopBtn.disabled = false
             break
         case 'paused':
-            statusEl.textContent = 'Pause'
+            statusEl.textContent = 'En pause'
             startBtn.disabled = true
             pauseBtn.disabled = true
             resumeBtn.disabled = false
