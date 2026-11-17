@@ -81,8 +81,16 @@ router.get("/:id/pdf", auth, (req,res)=>{
             return res.status(500).send("La génération PDF est temporairement indisponible")
         }
 
-        const doc = new PDFDocument({size: "A4", margin: 52, info: {Title: report.title, Author: report.agent_username || "FIB"}})
-        const filename = safeFilename(report.title)
+        const doc = new PDFDocument({
+            size: "A4",
+            margins: {top: 52, right: 52, bottom: 56, left: 52},
+            info: {
+                Title: `Rapport #${report.id} - ${report.title || "Sans titre"}`,
+                Author: report.agent_username || "FIB",
+                Subject: "Rapport opérationnel FIB"
+            }
+        })
+        const filename = `${report.id}-${safeFilename(report.title)}`
         res.setHeader("Content-Type", "application/pdf")
         res.setHeader("Content-Disposition", `inline; filename="rapport-${filename}.pdf"`)
         doc.on("error", pdfErr=>{
@@ -92,25 +100,44 @@ router.get("/:id/pdf", auth, (req,res)=>{
         })
         doc.pipe(res)
 
-        doc.fillColor("#1f3cff").fontSize(10).text("FIB  /  RAPPORT OPÉRATIONNEL", {characterSpacing: 1.2})
-        doc.moveDown(0.7)
-        doc.fillColor("#111827").fontSize(24).font("Helvetica-Bold").text(report.title || "Rapport sans titre")
-        doc.moveDown(0.6)
+        function ensureSpace(height = 34){
+            if(doc.y + height > doc.page.height - doc.page.margins.bottom) doc.addPage()
+        }
 
-        const level = Number(report.level) === 1 ? "Public" : Number(report.level) === 2 ? "Confidentiel" : "Secret"
+        doc.fillColor("#1f3cff").font("Helvetica-Bold").fontSize(9).text("FIB  /  RAPPORT OPÉRATIONNEL", {characterSpacing: 1.2})
+        doc.moveDown(0.6)
+        doc.fillColor("#111827").fontSize(22).font("Helvetica-Bold").text(report.title || "Rapport sans titre")
+        doc.moveDown(0.5)
+
+        const level = Number(report.level) === 1 ? "Public" : Number(report.level) === 2 ? "Confidentiel" : Number(report.level) === 3 ? "Secret" : "Non renseigné"
+        const reportType = report.report_type === "Dossier" ? "Dossier de groupe" : "Compte-rendu opérationnel"
+        const createdAt = report.created_at ? new Date(report.created_at) : null
+        const createdAtText = createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt.toLocaleString("fr-FR") : "Non renseignée"
         const metadata = [
-            `Agent : ${report.agent_username || "Inconnu"}${report.agent_grade ? ` (${report.agent_grade})` : ""}`,
-            `Créé le : ${report.created_at ? new Date(report.created_at).toLocaleString("fr-FR") : "Non renseigné"}`,
-            `Niveau : ${level}`
+            ["Référence", `#${report.id}`],
+            ["Type", reportType],
+            ["Agent", `${report.agent_username || "Non renseigné"}${report.agent_grade ? ` (${report.agent_grade})` : ""}`],
+            ["Créé le", createdAtText],
+            ["Niveau de confidentialité", level]
         ]
-        if(report.group_name || report.group_id) metadata.push(`Dossier groupe : ${report.group_name || `Groupe #${report.group_id}`}`)
-        doc.fillColor("#475569").font("Helvetica").fontSize(10).text(metadata.join("   •   "), {lineGap: 4})
-        doc.moveDown(1)
+        if(report.group_name || report.group_id){
+            metadata.push(["Groupe associé", report.group_name || `Groupe #${report.group_id}`])
+        }
+        metadata.forEach(([label, value])=>{
+            doc.fillColor("#475569").font("Helvetica-Bold").fontSize(9).text(`${label} : `, {continued: true})
+            doc.fillColor("#1f2937").font("Helvetica").text(value, {lineGap: 2})
+        })
+        doc.moveDown(0.5)
+        doc.moveTo(doc.page.margins.left, doc.y)
+            .lineTo(doc.page.width - doc.page.margins.right, doc.y)
+            .strokeColor("#cbd5e1")
+            .lineWidth(1)
+            .stroke()
 
         function sectionHeading(label){
-            if(doc.y > 700) doc.addPage()
+            ensureSpace(42)
             doc.moveDown(0.5)
-            doc.fillColor("#1f3cff").font("Helvetica-Bold").fontSize(13).text(label)
+            doc.fillColor("#1f3cff").font("Helvetica-Bold").fontSize(12).text(label)
             doc.moveDown(0.35)
         }
 
@@ -118,26 +145,53 @@ router.get("/:id/pdf", auth, (req,res)=>{
             const lines = String(content || "").split(/\r?\n/)
             for(const line of lines){
                 if(!line){
-                    doc.moveDown(0.65)
+                    doc.moveDown(0.45)
                     continue
                 }
                 const segments = splitReportContent(line)
                 segments.forEach((segment, index)=>{
-                    const options = {continued: index < segments.length - 1}
+                    const options = {continued: index < segments.length - 1, lineGap: 3}
                     if(segment.url) options.link = segment.url
                     doc.fillColor(segment.url ? "#1d4ed8" : "#1f2937")
                         .font("Helvetica")
-                        .fontSize(11)
+                        .fontSize(10)
                         .text(segment.text, options)
                 })
-                doc.moveDown(0.25)
+                doc.moveDown(0.3)
             }
         }
 
-        sectionHeading("Contenu")
-        writeLinkedContent(report.content)
+        function writeField(label, value){
+            ensureSpace(30)
+            doc.fillColor("#334155")
+                .font("Helvetica-Bold")
+                .fontSize(10)
+                .text(`${label} : `, {continued: true})
+            doc.fillColor("#1f2937")
+                .font("Helvetica")
+                .text(String(value || "Non renseigné"), {lineGap: 3})
+            doc.moveDown(0.4)
+        }
 
-        const details = [
+        sectionHeading("Contenu")
+        if(report.content){
+            writeLinkedContent(report.content)
+        } else {
+            doc.fillColor("#64748b").font("Helvetica-Oblique").fontSize(10).text("Aucun contenu renseigné.")
+        }
+
+        const groupDetails = [
+            ["Revendications", report.claims],
+            ["Zones d’opération", report.operating_places],
+            ["Planque connue", report.hideout]
+        ]
+        if(report.report_type === "Dossier" || report.group_name || report.group_id || groupDetails.some(([, value])=>value)){
+            sectionHeading("Renseignements sur le groupe")
+            groupDetails.forEach(([label, value])=>writeField(label, value))
+        }
+
+        sectionHeading("Détails opérationnels")
+        const operationalDetails = [
             ["Personnes concernées", report.personnes_concernees],
             ["Agents concernés", report.agents_concernes],
             ["Véhicules", report.vehicules],
@@ -145,16 +199,7 @@ router.get("/:id/pdf", auth, (req,res)=>{
             ["Armes", report.armes],
             ["Numéros de série", report.numeros_serie]
         ]
-        if(details.some(([, value])=>value)){
-            sectionHeading("Détails opérationnels")
-            details.forEach(([label, value])=>{
-                if(!value) return
-                if(doc.y > 730) doc.addPage()
-                doc.fillColor("#0f172a").font("Helvetica-Bold").fontSize(10).text(`${label} : `, {continued: true})
-                doc.fillColor("#334155").font("Helvetica").text(String(value))
-                doc.moveDown(0.25)
-            })
-        }
+        operationalDetails.forEach(([label, value])=>writeField(label, value))
 
         doc.end()
     })
