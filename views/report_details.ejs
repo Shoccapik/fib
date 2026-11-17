@@ -38,7 +38,7 @@
             </div>
 
             <h2>Contenu</h2>
-            <div class="report-details-content"><%= report.content %></div>
+            <div class="report-details-content"><% contentSegments.forEach(segment => { if (segment.url) { %><a href="<%= segment.url %>" target="_blank" rel="noopener noreferrer"><%= segment.text %></a><% } else { %><%= segment.text %><% } }) %></div>
 
             <h2>Détails opérationnels</h2>
             <div class="report-details-grid">
@@ -51,6 +51,7 @@
             </div>
 
             <div class="report-actions">
+                <a href="/reports/<%= report.id %>/pdf" class="btn-small report-action-primary" target="_blank" rel="noopener">Ouvrir le PDF</a>
                 <a href="/reports/<%= report.id %>/edit" class="btn-small report-action-primary">Éditer le rapport</a>
                 <form method="POST" action="/reports/<%= report.id %>/delete" onsubmit="return confirm('Voulez-vous vraiment supprimer ce rapport ?');">
                     <button type="submit" class="btn-small report-action-danger">Supprimer</button>

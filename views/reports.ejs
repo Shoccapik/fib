@@ -146,7 +146,8 @@
                     <a class="report-group-link" href="<%= report.group_id ? '/groups/' + report.group_id : '/reports/groups/' + encodeURIComponent(report.group_name) %>">Dossier groupe : <%= report.group_name || ('Groupe #' + report.group_id) %> <span>›</span></a>
                     <% } %>
                     <h3><a href="/reports/<%= report.id %>"><%= report.title %></a></h3>
-                    <p class="report-preview"><%= report.content.substring(0, 190) %><%= report.content.length > 190 ? '...' : '' %></p>
+                    <p class="report-preview"><% report.previewSegments.forEach(segment => { if (segment.url) { %><a href="<%= segment.url %>" target="_blank" rel="noopener noreferrer"><%= segment.text %></a><% } else { %><%= segment.text %><% } }) %></p>
+                    <a class="report-pdf-link" href="/reports/<%= report.id %>/pdf" target="_blank" rel="noopener">Ouvrir le PDF <span>↗</span></a>
 
                     <div class="meta">
                         <span>Agent : <strong><%= report.agent_username || 'Inconnu' %></strong></span>
