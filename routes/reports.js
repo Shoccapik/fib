@@ -4,7 +4,6 @@ const db = require("../config/database")
 const auth = require("../middleware/auth")
 const logToWebhook = require("../utils/logger")
 const splitReportContent = require("../utils/reportLinks")
-const PDFDocument = require("pdfkit")
 
 function reportSelect(){
     return "SELECT r.*, u.username AS agent_username, u.grade_title AS agent_grade FROM reports r LEFT JOIN users u ON r.agent_id = u.id"
@@ -74,6 +73,14 @@ router.get("/:id/pdf", auth, (req,res)=>{
         if(rows.length === 0) return res.status(404).send("Rapport non trouvé")
 
         const report = rows[0]
+        let PDFDocument
+        try {
+            PDFDocument = require("pdfkit")
+        } catch(pdfLoadErr) {
+            console.error("Erreur lors du chargement du générateur PDF:", pdfLoadErr)
+            return res.status(500).send("La génération PDF est temporairement indisponible")
+        }
+
         const doc = new PDFDocument({size: "A4", margin: 52, info: {Title: report.title, Author: report.agent_username || "FIB"}})
         const filename = safeFilename(report.title)
         res.setHeader("Content-Type", "application/pdf")
