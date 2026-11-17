@@ -90,9 +90,39 @@
                 <span class="reports-count"><%= citizenPhotos.length %> image<%= citizenPhotos.length > 1 ? 's' : '' %></span>
             </div>
             <div class="citizen-photo-grid">
-                <% citizenPhotos.forEach(photo => { %><a href="<%= photo %>" target="_blank" rel="noreferrer"><img src="<%= photo %>" alt="Photo du dossier citoyen"></a><% }) %>
+                <% citizenPhotos.forEach((photo, index) => { %>
+                <button class="citizen-photo-button" type="button" data-photo-index="<%= index %>" aria-label="Agrandir la photo <%= index + 1 %>">
+                    <img src="<%= photo %>" alt="Photo <%= index + 1 %> du dossier citoyen">
+                    <span class="photo-zoom-hint" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.3"></circle><path d="m15.5 15.5 5 5"></path><path d="M10.8 7.5v6.6M7.5 10.8h6.6"></path></svg>
+                    </span>
+                </button>
+                <% }) %>
             </div>
         </div>
+        <dialog class="photo-viewer" id="photo-viewer" aria-label="Visionneuse de photos">
+            <div class="photo-viewer-header">
+                <div>
+                    <p class="section-kicker">Pièces visuelles</p>
+                    <strong id="photo-viewer-counter">Photo 1 / <%= citizenPhotos.length %></strong>
+                </div>
+                <button class="photo-viewer-close" type="button" data-photo-close aria-label="Fermer la visionneuse">×</button>
+            </div>
+            <div class="photo-viewer-stage">
+                <button class="photo-viewer-nav photo-viewer-previous" type="button" data-photo-previous aria-label="Photo précédente">‹</button>
+                <img id="photo-viewer-image" alt="Photo agrandie du dossier citoyen">
+                <button class="photo-viewer-nav photo-viewer-next" type="button" data-photo-next aria-label="Photo suivante">›</button>
+            </div>
+            <div class="photo-viewer-toolbar">
+                <span>Zoom</span>
+                <button type="button" data-zoom-out aria-label="Réduire le zoom">−</button>
+                <output id="photo-viewer-zoom">100 %</output>
+                <button type="button" data-zoom-in aria-label="Agrandir avec la loupe">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.3"></circle><path d="m15.5 15.5 5 5M10.8 7.5v6.6M7.5 10.8h6.6"></path></svg>
+                </button>
+                <button class="photo-viewer-reset" type="button" data-zoom-reset>Réinitialiser</button>
+            </div>
+        </dialog>
         <% } %>
 
         <div class="reports-list">
@@ -138,5 +168,6 @@
 </div>
 
 <script src="/js/site-presence.js" data-user-id="<%= user.id %>"></script>
+<script src="/js/photo-viewer.js"></script>
 </body>
 </html>
