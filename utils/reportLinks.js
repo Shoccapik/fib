@@ -10,6 +10,20 @@ function isHttpUrl(value){
     }
 }
 
+function googleDocsPdfUrl(value){
+    try {
+        const url = new URL(value)
+        if(url.hostname !== "docs.google.com") return null
+
+        const documentPath = url.pathname.match(/^\/document\/(?:u\/\d+\/)?d\/([a-zA-Z0-9_-]+)(?:\/|$)/)
+        if(!documentPath) return null
+
+        return `https://docs.google.com/document/d/${documentPath[1]}/export?format=pdf`
+    } catch(error) {
+        return null
+    }
+}
+
 function splitReportContent(content){
     const text = String(content || "")
     const segments = []
@@ -38,7 +52,12 @@ function splitReportContent(content){
         if(urlStart > lastIndex){
             segments.push({text: text.slice(lastIndex, urlStart)})
         }
-        segments.push({text: url, url: href})
+        const pdfUrl = googleDocsPdfUrl(href)
+        segments.push({
+            text: url,
+            url: pdfUrl || href,
+            isGoogleDoc: Boolean(pdfUrl)
+        })
         if(punctuation) segments.push({text: punctuation})
         lastIndex = urlStart + match[0].length
     }

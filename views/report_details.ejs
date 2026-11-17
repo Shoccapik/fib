@@ -38,7 +38,7 @@
             </div>
 
             <h2>Contenu</h2>
-            <div class="report-details-content"><% contentSegments.forEach(segment => { if (segment.url) { %><a href="<%= segment.url %>" target="_blank" rel="noopener noreferrer"><%= segment.text %></a><% } else { %><%= segment.text %><% } }) %></div>
+            <div class="report-details-content"><% contentSegments.forEach(segment => { if (segment.url) { %><a href="<%= segment.url %>" target="_blank" rel="noopener noreferrer"<%= segment.isGoogleDoc ? ' aria-label="Ouvrir le document Google en PDF"' : '' %>><%= segment.isGoogleDoc ? 'Ouvrir le document Google en PDF' : segment.text %></a><% } else { %><%= segment.text %><% } }) %></div>
 
             <h2>Détails opérationnels</h2>
             <div class="report-details-grid">
