@@ -2911,16 +2911,26 @@ body:not(.login-body) {
     }
 
     .photo-viewer {
-        width: min(1000px, calc(100vw - 32px));
+        width: min(1280px, calc(100vw - 48px));
+        height: min(92vh, 960px);
         max-width: none;
-        max-height: calc(100vh - 32px);
-        padding: 18px;
+        max-height: none;
+        margin: 0;
+        padding: 24px;
         overflow: hidden;
         border: 1px solid #334b75;
         border-radius: 16px;
         background: #0b1222;
         color: #e2e8f0;
         box-shadow: 0 24px 80px rgba(0, 0, 0, .6);
+    }
+
+    .photo-viewer[open] {
+        position: fixed;
+        inset: 50% auto auto 50%;
+        display: flex;
+        flex-direction: column;
+        transform: translate(-50%, -50%);
     }
 
     .photo-viewer::backdrop {
@@ -2961,12 +2971,12 @@ body:not(.login-body) {
 
     .photo-viewer-stage {
         display: grid;
+        flex: 1;
         grid-template-columns: 44px minmax(0, 1fr) 44px;
         align-items: center;
         justify-items: center;
         gap: 10px;
-        min-height: 220px;
-        max-height: calc(100vh - 170px);
+        min-height: 0;
         overflow: auto;
         border: 1px solid #1f2c45;
         border-radius: 11px;
@@ -2978,7 +2988,7 @@ body:not(.login-body) {
     .photo-viewer-stage img {
         display: block;
         max-width: 100%;
-        max-height: calc(100vh - 230px);
+        max-height: calc(92vh - 170px);
         object-fit: contain;
         transform-origin: center;
         transition: transform .16s ease;
@@ -3075,15 +3085,18 @@ body:not(.login-body) {
 
     @media (max-width: 600px) {
         .photo-viewer {
-            width: calc(100vw - 20px);
-            max-height: calc(100vh - 20px);
-            padding: 12px;
+            width: calc(100vw - 16px);
+            height: calc(100vh - 16px);
+            padding: 14px;
         }
 
         .photo-viewer-stage {
             grid-template-columns: 34px minmax(0, 1fr) 34px;
             gap: 4px;
-            min-height: 180px;
+        }
+
+        .photo-viewer-stage img {
+            max-height: calc(100vh - 170px);
         }
 
         .photo-viewer-nav {
@@ -3995,5 +4008,237 @@ body:not(.login-body) {
         margin-left: -18px;
         padding-right: 18px;
         padding-left: 18px;
+    }
+}
+
+/* Responsive layout refinements */
+@media (max-width: 900px) {
+    .layout {
+        display: block;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .sidebar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+        width: 100%;
+        min-width: 0;
+        height: auto;
+        padding: 8px clamp(12px, 3vw, 24px);
+        border-bottom: 1px solid #263147;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, .2);
+    }
+
+    .sidebar-logo {
+        flex: 0 0 auto;
+        width: 48px;
+        height: 48px;
+        margin: 0 8px 0 0;
+        object-fit: contain;
+    }
+
+    .sidebar a {
+        display: inline-flex;
+        flex: 0 0 auto;
+        align-items: center;
+        min-height: 40px;
+        margin: 0;
+        padding: 9px 11px;
+        white-space: nowrap;
+    }
+
+    .sidebar .logout {
+        flex: 0 0 auto;
+        margin: 0 0 0 auto;
+    }
+
+    .main {
+        min-width: 0;
+        padding: clamp(18px, 3vw, 30px);
+    }
+
+    .topbar {
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .topbar > :first-child {
+        min-width: 0;
+    }
+
+    .user-info {
+        flex-wrap: wrap;
+        margin-left: auto;
+    }
+
+    .cards {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .card {
+        width: auto;
+        min-width: 0;
+    }
+
+    .message-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+    }
+
+    .message-sidebar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        padding: 14px;
+    }
+
+    .message-sidebar-label {
+        width: 100%;
+        margin-bottom: 0;
+    }
+
+    .message-sidebar a {
+        flex: 1 1 160px;
+    }
+
+    .message-main,
+    .message-compose,
+    .message-list {
+        min-width: 0;
+    }
+
+    .group-content-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .group-summary,
+    .group-intelligence {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .report-dossier-fields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .data-table,
+    .admin-table {
+        display: block;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .data-table th,
+    .data-table td,
+    .admin-table th,
+    .admin-table td {
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 600px) {
+    .main {
+        padding: 18px 14px;
+    }
+
+    .topbar h1 {
+        font-size: clamp(24px, 7vw, 32px);
+        overflow-wrap: anywhere;
+    }
+
+    .topbar .user-info {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .report-form,
+    .reports-list,
+    .admin-content {
+        padding: 16px;
+    }
+
+    .group-summary,
+    .group-intelligence {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .report-create-form form,
+    .message-compose form {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .report-operational-fields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .report-create-form form > *,
+    .message-compose form > * {
+        grid-column: 1;
+    }
+
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        margin-right: 0;
+        margin-left: 0;
+    }
+
+    .message-card {
+        gap: 10px;
+    }
+
+    .message-card-header {
+        flex-wrap: wrap;
+        gap: 4px 10px;
+    }
+
+    .group-report-row,
+    .group-citizen-row {
+        grid-template-columns: 40px minmax(0, 1fr) auto;
+        gap: 8px;
+    }
+
+    .report-card,
+    .message-list,
+    .message-compose {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 380px) {
+    .sidebar {
+        gap: 3px;
+        padding-right: 8px;
+        padding-left: 8px;
+    }
+
+    .sidebar-logo {
+        width: 40px;
+        height: 40px;
+        margin-right: 4px;
+    }
+
+    .sidebar a {
+        min-height: 36px;
+        padding: 8px;
+        font-size: 12px;
+    }
+
+    .cards {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
