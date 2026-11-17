@@ -235,6 +235,8 @@ Au démarrage, l'application vérifie également les colonnes ajoutées aux cito
 npm start
 ```
 
+Après tout déploiement qui modifie `package.json` ou `package-lock.json`, réinstallez les dépendances (`npm install` à la racine du projet), puis redémarrez l’application. La génération des rapports PDF nécessite notamment `pdfkit`.
+
 Le serveur démarre sur :
 
 ```text

@@ -78,6 +78,9 @@ router.get("/:id/pdf", auth, (req,res)=>{
             PDFDocument = require("pdfkit")
         } catch(pdfLoadErr) {
             console.error("Erreur lors du chargement du générateur PDF:", pdfLoadErr)
+            if(pdfLoadErr.code === "MODULE_NOT_FOUND"){
+                return res.status(503).send("Le générateur PDF ou l’une de ses dépendances manque sur le serveur. Exécutez npm install à la racine du projet, puis redémarrez l’application.")
+            }
             return res.status(500).send("La génération PDF est temporairement indisponible")
         }
 
