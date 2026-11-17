@@ -1,5 +1,6 @@
 const express = require("express")
 const router = express.Router()
+const path = require("path")
 const db = require("../config/database")
 const auth = require("../middleware/auth")
 const logToWebhook = require("../utils/logger")
@@ -86,7 +87,8 @@ router.get("/:id/pdf", auth, (req,res)=>{
 
         const doc = new PDFDocument({
             size: "A4",
-            margins: {top: 52, right: 52, bottom: 56, left: 52},
+            margins: {top: 68, right: 50, bottom: 58, left: 50},
+            bufferPages: true,
             info: {
                 Title: `Rapport #${report.id} - ${report.title || "Sans titre"}`,
                 Author: report.agent_username || "FIB",
@@ -96,6 +98,7 @@ router.get("/:id/pdf", auth, (req,res)=>{
         const filename = `${report.id}-${safeFilename(report.title)}`
         res.setHeader("Content-Type", "application/pdf")
         res.setHeader("Content-Disposition", `inline; filename="rapport-${filename}.pdf"`)
+        res.setHeader("X-Content-Type-Options", "nosniff")
         doc.on("error", pdfErr=>{
             console.error("Erreur lors de la génération du PDF:", pdfErr)
             if(!res.headersSent) res.status(500).end("Erreur lors de la génération du PDF")
@@ -103,106 +106,211 @@ router.get("/:id/pdf", auth, (req,res)=>{
         })
         doc.pipe(res)
 
+        const colors = {
+            navy: "#0f172a",
+            blue: "#2563eb",
+            paleBlue: "#dbeafe",
+            text: "#1e293b",
+            muted: "#64748b",
+            border: "#e2e8f0",
+            panel: "#f8fafc"
+        }
+        const pageWidth = doc.page.width
+        const contentWidth = pageWidth - doc.page.margins.left - doc.page.margins.right
+
         function ensureSpace(height = 34){
             if(doc.y + height > doc.page.height - doc.page.margins.bottom) doc.addPage()
         }
-
-        doc.fillColor("#1f3cff").font("Helvetica-Bold").fontSize(9).text("FIB  /  RAPPORT OPÉRATIONNEL", {characterSpacing: 1.2})
-        doc.moveDown(0.6)
-        doc.fillColor("#111827").fontSize(22).font("Helvetica-Bold").text(report.title || "Rapport sans titre")
-        doc.moveDown(0.5)
 
         const level = Number(report.level) === 1 ? "Public" : Number(report.level) === 2 ? "Confidentiel" : Number(report.level) === 3 ? "Secret" : "Non renseigné"
         const reportType = report.report_type === "Dossier" ? "Dossier de groupe" : "Compte-rendu opérationnel"
         const createdAt = report.created_at ? new Date(report.created_at) : null
         const createdAtText = createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt.toLocaleString("fr-FR") : "Non renseignée"
+        const classificationColor = level === "Public" ? "#15803d" : level === "Confidentiel" ? "#b45309" : level === "Secret" ? "#b91c1c" : colors.muted
         const metadata = [
-            ["Référence", `#${report.id}`],
-            ["Type", reportType],
-            ["Agent", `${report.agent_username || "Non renseigné"}${report.agent_grade ? ` (${report.agent_grade})` : ""}`],
-            ["Créé le", createdAtText],
-            ["Niveau de confidentialité", level]
+            {label: "Référence", value: `#${report.id}`, valueColor: colors.blue},
+            {label: "Type de rapport", value: reportType},
+            {label: "Agent responsable", value: `${report.agent_username || "Non renseigné"}${report.agent_grade ? ` (${report.agent_grade})` : ""}`},
+            {label: "Date de création", value: createdAtText},
+            {label: "Confidentialité", value: level, valueColor: classificationColor, accentColor: classificationColor},
+            {label: "Groupe associé", value: report.group_name ? `${report.group_name}${report.group_id ? ` (#${report.group_id})` : ""}` : report.group_id ? `Groupe #${report.group_id}` : "Non renseigné"}
         ]
-        if(report.group_name || report.group_id){
-            metadata.push(["Groupe associé", report.group_name || `Groupe #${report.group_id}`])
-        }
-        metadata.forEach(([label, value])=>{
-            doc.fillColor("#475569").font("Helvetica-Bold").fontSize(9).text(`${label} : `, {continued: true})
-            doc.fillColor("#1f2937").font("Helvetica").text(value, {lineGap: 2})
-        })
-        doc.moveDown(0.5)
-        doc.moveTo(doc.page.margins.left, doc.y)
-            .lineTo(doc.page.width - doc.page.margins.right, doc.y)
-            .strokeColor("#cbd5e1")
-            .lineWidth(1)
-            .stroke()
 
         function sectionHeading(label){
-            ensureSpace(42)
-            doc.moveDown(0.5)
-            doc.fillColor("#1f3cff").font("Helvetica-Bold").fontSize(12).text(label)
-            doc.moveDown(0.35)
+            ensureSpace(54)
+            doc.moveDown(0.45)
+            const headingY = doc.y
+            doc.roundedRect(doc.page.margins.left, headingY + 1, 4, 17, 2).fill(colors.blue)
+            doc.fillColor(colors.navy)
+                .font("Helvetica-Bold")
+                .fontSize(12)
+                .text(label.toUpperCase(), doc.page.margins.left + 13, headingY, {characterSpacing: 0.6})
+            doc.y = headingY + 27
+            doc.x = doc.page.margins.left
         }
 
         function writeLinkedContent(content){
             const lines = String(content || "").split(/\r?\n/)
             for(const line of lines){
                 if(!line){
-                    doc.moveDown(0.45)
+                    doc.moveDown(0.5)
                     continue
                 }
                 const segments = splitReportContent(line)
                 segments.forEach((segment, index)=>{
                     const options = {continued: index < segments.length - 1, lineGap: 3}
-                    if(segment.url) options.link = segment.url
-                    doc.fillColor(segment.url ? "#1d4ed8" : "#1f2937")
+                    if(segment.url){
+                        options.link = segment.url
+                        options.underline = true
+                    }
+                    doc.fillColor(segment.url ? colors.blue : colors.text)
                         .font("Helvetica")
-                        .fontSize(10)
+                        .fontSize(10.5)
                         .text(segment.text, options)
                 })
-                doc.moveDown(0.3)
+                doc.moveDown(0.32)
             }
         }
 
         function writeField(label, value){
-            ensureSpace(30)
-            doc.fillColor("#334155")
+            ensureSpace(36)
+            doc.fillColor(colors.muted)
                 .font("Helvetica-Bold")
-                .fontSize(10)
+                .fontSize(9)
                 .text(`${label} : `, {continued: true})
-            doc.fillColor("#1f2937")
+            doc.fillColor(colors.text)
                 .font("Helvetica")
+                .fontSize(10)
                 .text(String(value || "Non renseigné"), {lineGap: 3})
-            doc.moveDown(0.4)
+            doc.moveDown(0.35)
         }
+
+        function drawCardRows(fields, columns = 2){
+            const gap = 10
+            const cardWidth = (contentWidth - gap * (columns - 1)) / columns
+
+            for(let index = 0; index < fields.length; index += columns){
+                const row = fields.slice(index, index + columns)
+                doc.font("Helvetica").fontSize(10)
+                const cards = row.map(field=>{
+                    const value = String(field.value || "Non renseigné")
+                    const valueHeight = doc.heightOfString(value, {width: cardWidth - 34, lineGap: 2})
+                    return {field, value, height: Math.max(52, valueHeight + 34)}
+                })
+                const rowHeight = Math.max(...cards.map(card=>card.height))
+                const maxHeight = doc.page.height - doc.page.margins.top - doc.page.margins.bottom - 16
+
+                if(rowHeight > maxHeight){
+                    cards.forEach(({field, value})=>writeField(field.label, value))
+                    continue
+                }
+
+                ensureSpace(rowHeight + gap)
+                const rowY = doc.y
+                cards.forEach(({field, value, height}, cardIndex)=>{
+                    const x = doc.page.margins.left + cardIndex * (cardWidth + gap)
+                    doc.roundedRect(x, rowY, cardWidth, height, 7)
+                        .fillAndStroke(colors.panel, colors.border)
+                    doc.roundedRect(x + 10, rowY + 10, 3, height - 20, 1.5)
+                        .fill(field.accentColor || colors.blue)
+                    doc.fillColor(colors.muted)
+                        .font("Helvetica-Bold")
+                        .fontSize(8)
+                        .text(field.label.toUpperCase(), x + 20, rowY + 9, {width: cardWidth - 32})
+                    doc.fillColor(field.valueColor || colors.text)
+                        .font(field.valueColor ? "Helvetica-Bold" : "Helvetica")
+                        .fontSize(10)
+                        .text(value, x + 20, rowY + 24, {width: cardWidth - 32, lineGap: 2})
+                })
+                doc.y = rowY + rowHeight + gap
+                doc.x = doc.page.margins.left
+            }
+        }
+
+        const title = report.title || "Rapport sans titre"
+        doc.font("Helvetica-Bold").fontSize(22)
+        const titleHeight = doc.heightOfString(title, {width: contentWidth, lineGap: 2})
+        const headerHeight = Math.max(158, 72 + titleHeight + 42)
+        const subtitleY = 72 + titleHeight + 11
+
+        doc.rect(0, 0, pageWidth, headerHeight).fill(colors.navy)
+        doc.rect(0, 0, 8, headerHeight).fill(colors.blue)
+        doc.image(path.join(__dirname, "..", "public", "images", "FIB.png"), doc.page.margins.left, 25, {fit: [32, 32]})
+        doc.fillColor(colors.paleBlue).font("Helvetica-Bold").fontSize(8)
+            .text("BUREAU FÉDÉRAL D’INVESTIGATION  /  MDT", doc.page.margins.left + 44, 37, {characterSpacing: 0.8})
+        doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(22)
+            .text(title, doc.page.margins.left, 72, {width: contentWidth, lineGap: 2})
+        doc.fillColor("#bfdbfe").font("Helvetica").fontSize(9)
+            .text(`${reportType.toUpperCase()}   •   RÉFÉRENCE #${report.id}`, doc.page.margins.left, subtitleY, {characterSpacing: 0.4})
+        doc.y = headerHeight + 20
+        doc.x = doc.page.margins.left
+
+        drawCardRows(metadata)
 
         sectionHeading("Contenu")
         if(report.content){
             writeLinkedContent(report.content)
         } else {
-            doc.fillColor("#64748b").font("Helvetica-Oblique").fontSize(10).text("Aucun contenu renseigné.")
+            doc.fillColor(colors.muted).font("Helvetica-Oblique").fontSize(10).text("Aucun contenu renseigné.")
         }
 
         const groupDetails = [
-            ["Revendications", report.claims],
-            ["Zones d’opération", report.operating_places],
-            ["Planque connue", report.hideout]
+            {label: "Revendications", value: report.claims},
+            {label: "Zones d’opération", value: report.operating_places},
+            {label: "Planque connue", value: report.hideout}
         ]
-        if(report.report_type === "Dossier" || report.group_name || report.group_id || groupDetails.some(([, value])=>value)){
+        if(report.report_type === "Dossier" || report.group_name || report.group_id || groupDetails.some(({value})=>value)){
             sectionHeading("Renseignements sur le groupe")
-            groupDetails.forEach(([label, value])=>writeField(label, value))
+            drawCardRows(groupDetails)
         }
 
         sectionHeading("Détails opérationnels")
         const operationalDetails = [
-            ["Personnes concernées", report.personnes_concernees],
-            ["Agents concernés", report.agents_concernes],
-            ["Véhicules", report.vehicules],
-            ["Plaques", report.plaques],
-            ["Armes", report.armes],
-            ["Numéros de série", report.numeros_serie]
+            {label: "Personnes concernées", value: report.personnes_concernees},
+            {label: "Agents concernés", value: report.agents_concernes},
+            {label: "Véhicules", value: report.vehicules},
+            {label: "Plaques", value: report.plaques},
+            {label: "Armes", value: report.armes},
+            {label: "Numéros de série", value: report.numeros_serie}
         ]
-        operationalDetails.forEach(([label, value])=>writeField(label, value))
+        drawCardRows(operationalDetails)
+
+        const pageRange = doc.bufferedPageRange()
+        for(let pageIndex = pageRange.start; pageIndex < pageRange.start + pageRange.count; pageIndex++){
+            doc.switchToPage(pageIndex)
+            const savedX = doc.x
+            const savedY = doc.y
+
+            if(pageIndex > pageRange.start){
+                doc.fillColor(colors.muted).font("Helvetica-Bold").fontSize(8)
+                    .text(`FIB / MDT   •   RAPPORT #${report.id}`, doc.page.margins.left, 28, {characterSpacing: 0.5, lineBreak: false})
+                doc.moveTo(doc.page.margins.left, 48)
+                    .lineTo(doc.page.width - doc.page.margins.right, 48)
+                    .strokeColor(colors.border)
+                    .lineWidth(0.7)
+                    .stroke()
+            }
+
+            const originalBottomMargin = doc.page.margins.bottom
+            const footerY = doc.page.height - 30
+            doc.page.margins.bottom = 18
+            doc.moveTo(doc.page.margins.left, footerY - 8)
+                .lineTo(doc.page.width - doc.page.margins.right, footerY - 8)
+                .strokeColor(colors.border)
+                .lineWidth(0.7)
+                .stroke()
+            doc.fillColor(colors.muted).font("Helvetica").fontSize(8)
+                .text("DOCUMENT INTERNE  •  FIB / MDT", doc.page.margins.left, footerY, {lineBreak: false})
+            doc.text(`PAGE ${pageIndex - pageRange.start + 1} / ${pageRange.count}`, doc.page.margins.left, footerY, {
+                width: contentWidth,
+                align: "right",
+                lineBreak: false
+            })
+
+            doc.page.margins.bottom = originalBottomMargin
+            doc.x = savedX
+            doc.y = savedY
+        }
 
         doc.end()
     })
