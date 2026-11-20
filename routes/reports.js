@@ -5,9 +5,26 @@ const db = require("../config/database")
 const auth = require("../middleware/auth")
 const logToWebhook = require("../utils/logger")
 const splitReportContent = require("../utils/reportLinks")
+const {REPORT_LEVEL_LABELS, reportAccessCondition, reportAccessParams, reportLevelLabel, isValidReportLevel} = require("../utils/reportAccess")
+const {REPORT_TYPE_OPTIONS, isValidOperationalReportType, reportTypeLabel} = require("../utils/reportTypes")
 
 function reportSelect(){
     return "SELECT r.*, u.username AS agent_username, u.grade_title AS agent_grade FROM reports r LEFT JOIN users u ON r.agent_id = u.id"
+}
+
+function accessibleGroupQuery(column){
+    return `SELECT g.id FROM groups g
+            WHERE g.${column} = ? AND (
+                g.created_by = ? OR EXISTS (
+                    SELECT 1 FROM reports r
+                    WHERE (r.group_id = g.id OR r.group_name = g.name)
+                    AND ${reportAccessCondition()}
+                )
+            )`
+}
+
+function accessibleGroupParams(value, user){
+    return [value, user.id, ...reportAccessParams(user)]
 }
 
 function safeFilename(value){
@@ -37,36 +54,51 @@ function reportPreviewSegments(content, maxLength = 190){
 
 router.get("/groups/:groupName", auth, (req,res)=>{
     const groupName = req.params.groupName
-    db.query("SELECT * FROM reports WHERE group_name = ? ORDER BY created_at DESC", [groupName], (err, reports)=>{
-        if(err) return res.status(500).send("Erreur lors de la lecture du dossier groupe")
-        db.query("SELECT * FROM citizens WHERE affiliation = ? ORDER BY nom, prenom", [groupName], (citizenErr, citizens)=>{
-            if(citizenErr) return res.status(500).send("Erreur lors de la lecture des citoyens du groupe")
-            res.render("group_details", {group: {name: groupName, claims: null, operating_places: null, hideout: null}, groupName, reports: reports || [], citizens: citizens || [], user: req.session.user})
+    db.query("SELECT * FROM groups WHERE name = ?", [groupName], (groupErr, groups)=>{
+        if(groupErr) return res.status(500).send("Erreur lors de la lecture du dossier groupe")
+        db.query(`SELECT * FROM reports WHERE group_name = ? AND ${reportAccessCondition()} ORDER BY created_at DESC`, [groupName, ...reportAccessParams(req.session.user)], (err, reports)=>{
+            if(err) return res.status(500).send("Erreur lors de la lecture des rapports du groupe")
+            const group = groups[0] || {name: groupName, claims: null, operating_places: null, hideout: null}
+            if(Number(group.created_by) !== Number(req.session.user.id) && !reports.length) return res.status(404).send("Dossier groupe introuvable")
+            db.query("SELECT * FROM citizens WHERE affiliation = ? ORDER BY nom, prenom", [groupName], (citizenErr, citizens)=>{
+                if(citizenErr) return res.status(500).send("Erreur lors de la lecture des citoyens du groupe")
+                res.render("group_details", {group, groupName, reports: reports || [], citizens: citizens || [], reportTypeLabel, user: req.session.user})
+            })
         })
     })
 })
 
 router.get("/",auth,(req,res)=>{
 
-    db.query(`${reportSelect()} ORDER BY r.created_at DESC`, (err,result)=>{
+    db.query(`${reportSelect()} WHERE ${reportAccessCondition()} ORDER BY r.created_at DESC`, reportAccessParams(req.session.user), (err,result)=>{
         if(err){
             console.error("Erreur SELECT reports:", err)
             return res.send("Erreur lors de la lecture des rapports")
         }
-        db.query("SELECT id, name FROM groups ORDER BY name", (groupErr, groups)=>{
+        db.query(
+            `SELECT g.id, g.name FROM groups g
+             WHERE g.created_by = ? OR EXISTS (
+                 SELECT 1 FROM reports r
+                 WHERE (r.group_id = g.id OR r.group_name = g.name)
+                 AND ${reportAccessCondition()}
+             )
+             ORDER BY g.name`,
+            [req.session.user.id, ...reportAccessParams(req.session.user)],
+            (groupErr, groups)=>{
             if(groupErr) return res.status(500).send("Erreur lors de la lecture des groupes")
             const reports = result.map(report=>({
                 ...report,
+                level_label: reportLevelLabel(report.level),
                 previewSegments: reportPreviewSegments(report.content)
             }))
-            res.render("reports",{reports, groups: groups || [], user: req.session.user})
+            res.render("reports",{reports, groups: groups || [], user: req.session.user, reportLevels: REPORT_LEVEL_LABELS, reportTypeLabel})
         })
     })
 
 })
 
 router.get("/:id/pdf", auth, (req,res)=>{
-    db.query(`${reportSelect()} WHERE r.id = ?`, [req.params.id], (err, rows)=>{
+    db.query(`${reportSelect()} WHERE r.id = ? AND ${reportAccessCondition()}`, [req.params.id, ...reportAccessParams(req.session.user)], (err, rows)=>{
         if(err){
             console.error("Erreur SELECT report pour PDF:", err)
             return res.status(500).send("Erreur lors de la lecture du rapport")
@@ -122,11 +154,11 @@ router.get("/:id/pdf", auth, (req,res)=>{
             if(doc.y + height > doc.page.height - doc.page.margins.bottom) doc.addPage()
         }
 
-        const level = Number(report.level) === 1 ? "Public" : Number(report.level) === 2 ? "Confidentiel" : Number(report.level) === 3 ? "Secret" : "Non renseigné"
-        const reportType = report.report_type === "Dossier" ? "Dossier de groupe" : "Compte-rendu opérationnel"
+        const level = reportLevelLabel(report.level)
+        const reportType = reportTypeLabel(report.report_type)
         const createdAt = report.created_at ? new Date(report.created_at) : null
         const createdAtText = createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt.toLocaleString("fr-FR") : "Non renseignée"
-        const classificationColor = level === "Public" ? "#15803d" : level === "Confidentiel" ? "#b45309" : level === "Secret" ? "#b91c1c" : colors.muted
+        const classificationColor = Number(report.level) === 1 ? "#15803d" : Number(report.level) === 2 ? "#b45309" : Number(report.level) === 3 ? "#c2410c" : Number(report.level) === 4 ? "#b91c1c" : colors.muted
         const metadata = [
             {label: "Référence", value: `#${report.id}`, valueColor: colors.blue},
             {label: "Type de rapport", value: reportType},
@@ -319,7 +351,7 @@ router.get("/:id/pdf", auth, (req,res)=>{
 router.get("/:id", auth, (req,res)=>{
     const reportId = req.params.id
 
-    db.query(`${reportSelect()} WHERE r.id = ?`, [reportId], (err,result)=>{
+    db.query(`${reportSelect()} WHERE r.id = ? AND ${reportAccessCondition()}`, [reportId, ...reportAccessParams(req.session.user)], (err,result)=>{
         if(err){
             console.error("Erreur SELECT report:", err)
             return res.send("Erreur lors de la lecture du rapport")
@@ -333,6 +365,8 @@ router.get("/:id", auth, (req,res)=>{
         res.render("report_details", {
             report,
             contentSegments: splitReportContent(report.content),
+            reportLevelLabel,
+            reportTypeLabel,
             user: req.session.user
         })
     })
@@ -341,7 +375,7 @@ router.get("/:id", auth, (req,res)=>{
 router.get("/:id/edit", auth, (req,res)=>{
     const reportId = req.params.id
 
-    db.query("SELECT * FROM reports WHERE id = ?", [reportId], (err,result)=>{
+    db.query(`SELECT * FROM reports r WHERE r.id = ? AND ${reportAccessCondition()}`, [reportId, ...reportAccessParams(req.session.user)], (err,result)=>{
         if(err){
             console.error("Erreur SELECT report pour édition:", err)
             return res.send("Erreur lors de la lecture du rapport")
@@ -351,15 +385,17 @@ router.get("/:id/edit", auth, (req,res)=>{
             return res.send("Rapport non trouvé")
         }
 
-        res.render("report_edit", {report: result[0], user: req.session.user})
+        res.render("report_edit", {report: result[0], reportLevels: REPORT_LEVEL_LABELS, reportTypeOptions: REPORT_TYPE_OPTIONS, reportTypeLabel, user: req.session.user})
     })
 })
 
 router.post("/:id/update", auth, (req,res)=>{
     const reportId = req.params.id
-    const { title, content, level, group_name, personnes_concernees, agents_concernes, vehicules, plaques, armes, numeros_serie } = req.body
+    const { title, content, level, report_type, group_name, personnes_concernees, agents_concernes, vehicules, plaques, armes, numeros_serie } = req.body
 
-    db.query("SELECT * FROM reports WHERE id = ?", [reportId], (err, oldResults) => {
+    if(!isValidReportLevel(level)) return res.status(400).send("Le niveau du rapport doit être compris entre 1 et 4")
+
+    db.query(`SELECT * FROM reports r WHERE r.id = ? AND ${reportAccessCondition()}`, [reportId, ...reportAccessParams(req.session.user)], (err, oldResults) => {
         if(err){
             console.error("Erreur SELECT report pour modification:", err)
             return res.send("Erreur lors de la lecture du rapport")
@@ -370,10 +406,15 @@ router.post("/:id/update", auth, (req,res)=>{
         }
 
         const oldReport = oldResults[0]
+        const reportType = report_type || oldReport.report_type || "Compte-rendu"
+        if(oldReport.report_type === "Dossier" ? reportType !== "Dossier" : !isValidOperationalReportType(reportType)){
+            return res.status(400).send("Le type de rapport sélectionné est invalide")
+        }
         const changes = []
 
         const diffFields = [
             { key: 'title', label: 'Titre' },
+            { key: 'report_type', label: 'Type de rapport' },
             { key: 'content', label: 'Contenu' },
             { key: 'level', label: 'Niveau' },
             { key: 'personnes_concernees', label: 'Personnes concernées' },
@@ -384,7 +425,7 @@ router.post("/:id/update", auth, (req,res)=>{
             { key: 'numeros_serie', label: 'Numéros de série' }
         ]
 
-        const newValues = { title, content, level, personnes_concernees, agents_concernes, vehicules, plaques, armes, numeros_serie }
+        const newValues = { title, report_type: reportType, content, level, personnes_concernes, agents_concernes, vehicules, plaques, armes, numeros_serie }
 
         diffFields.forEach(field => {
             const oldValue = String(oldReport[field.key] ?? '').trim()
@@ -395,8 +436,8 @@ router.post("/:id/update", auth, (req,res)=>{
         })
 
         db.query(
-            "UPDATE reports SET title = ?, content = ?, level = ?, group_name = ?, personnes_concernees = ?, agents_concernes = ?, vehicules = ?, plaques = ?, armes = ?, numeros_serie = ? WHERE id = ?",
-            [title, content, level, group_name || null, personnes_concernees, agents_concernes, vehicules, plaques, armes, numeros_serie, reportId],
+            "UPDATE reports SET title = ?, content = ?, level = ?, report_type = ?, group_name = ?, personnes_concernees = ?, agents_concernes = ?, vehicules = ?, plaques = ?, armes = ?, numeros_serie = ? WHERE id = ?",
+            [title, content, level, reportType, group_name || null, personnes_concernees, agents_concernes, vehicules, plaques, armes, numeros_serie, reportId],
             (err)=>{
                 if(err){
                     console.error("Erreur UPDATE report:", err)
@@ -413,11 +454,12 @@ router.post("/:id/update", auth, (req,res)=>{
 router.post("/:id/delete", auth, (req,res)=>{
     const reportId = req.params.id
 
-    db.query("DELETE FROM reports WHERE id = ?", [reportId], (err)=>{
+    db.query(`DELETE r FROM reports r WHERE r.id = ? AND ${reportAccessCondition()}`, [reportId, ...reportAccessParams(req.session.user)], (err, result)=>{
         if(err){
             console.error("Erreur DELETE report:", err)
             return res.send("Erreur lors de la suppression du rapport")
         }
+        if(result.affectedRows === 0) return res.status(404).send("Rapport non trouvé")
 
         logToWebhook(`🗑️ Rapport supprimé ID : ${reportId}`,'warn')
         res.redirect('/reports')
@@ -427,21 +469,43 @@ router.post("/:id/delete", auth, (req,res)=>{
 router.post("/create",auth,async(req,res)=>{
 
     const {title,content,level,report_type,group_id,group_name,claims,operating_places,hideout,personnes_concernees,agents_concernes,vehicules,plaques,armes,numeros_serie} = req.body
+    const reportLevel = level === undefined ? 1 : Number(level)
+    if(!isValidReportLevel(reportLevel)) return res.status(400).send("Le niveau du rapport doit être compris entre 1 et 4")
+    const reportType = report_type || "Compte-rendu"
+    if(reportType !== "Dossier" && !isValidOperationalReportType(reportType)){
+        return res.status(400).send("Le type de rapport sélectionné est invalide")
+    }
 
     if(report_type === "Dossier"){
         if(!title || !title.trim()) return res.status(400).send("Le nom du dossier est requis")
+        const groupName = title.trim()
         db.query(
-            "INSERT INTO groups (name, claims, operating_places, hideout, created_by) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), claims = VALUES(claims), operating_places = VALUES(operating_places), hideout = VALUES(hideout)",
-            [title.trim(), claims || null, operating_places || null, hideout || null, req.session.user.id],
-            (groupErr, groupResult)=>{
-                if(groupErr) return res.status(500).send("Erreur lors de la création du dossier")
+            `SELECT g.id, (
+                g.created_by = ? OR EXISTS (
+                    SELECT 1 FROM reports r
+                    WHERE (r.group_id = g.id OR r.group_name = g.name)
+                    AND ${reportAccessCondition()}
+                )
+            ) AS can_access FROM groups g WHERE g.name = ?`,
+            [req.session.user.id, ...reportAccessParams(req.session.user), groupName],
+            (accessErr, existingGroups)=>{
+                if(accessErr) return res.status(500).send("Erreur lors de la vérification du dossier")
+                if(existingGroups.length && !Number(existingGroups[0].can_access)) return res.status(404).send("Dossier groupe introuvable")
+
                 db.query(
-                    "INSERT INTO reports (title, content, level, report_type, claims, operating_places, hideout, group_id, group_name, agent_id, personnes_concernees, agents_concernes, vehicules, plaques, armes, numeros_serie) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    [title.trim(), content || "Dossier de renseignement", level || 2, "Dossier", claims || null, operating_places || null, hideout || null, groupResult.insertId, title.trim(), req.session.user.id, personnes_concernees, agents_concernes, vehicules, plaques, armes, numeros_serie],
-                    async (reportErr)=>{
-                        if(reportErr) return res.status(500).send("Erreur lors de la création du dossier")
-                        await logToWebhook(`📁 Nouveau dossier groupe : ${title.trim()}`,'info',{changes:[`Revendications : ${claims || 'Non renseignées'}`, `Zones : ${operating_places || 'Non renseignées'}`, `Planque : ${hideout || 'Non renseignée'}`]})
-                        res.redirect(`/groups/${groupResult.insertId}`)
+                    "INSERT INTO groups (name, claims, operating_places, hideout, created_by) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), claims = VALUES(claims), operating_places = VALUES(operating_places), hideout = VALUES(hideout)",
+                    [groupName, claims || null, operating_places || null, hideout || null, req.session.user.id],
+                    (groupErr, groupResult)=>{
+                        if(groupErr) return res.status(500).send("Erreur lors de la création du dossier")
+                        db.query(
+                            "INSERT INTO reports (title, content, level, report_type, claims, operating_places, hideout, group_id, group_name, agent_id, personnes_concernees, agents_concernes, vehicules, plaques, armes, numeros_serie) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            [groupName, content || "Dossier de renseignement", reportLevel, "Dossier", claims || null, operating_places || null, hideout || null, groupResult.insertId, groupName, req.session.user.id, personnes_concernees, agents_concernes, vehicules, plaques, armes, numeros_serie],
+                            async (reportErr)=>{
+                                if(reportErr) return res.status(500).send("Erreur lors de la création du dossier")
+                                await logToWebhook(`📁 Nouveau dossier groupe : ${groupName}`,'info',{changes:[`Revendications : ${claims || 'Non renseignées'}`, `Zones : ${operating_places || 'Non renseignées'}`, `Planque : ${hideout || 'Non renseignée'}`]})
+                                res.redirect(`/groups/${groupResult.insertId}`)
+                            }
+                        )
                     }
                 )
             }
@@ -449,33 +513,45 @@ router.post("/create",auth,async(req,res)=>{
         return
     }
 
-    db.query(
-        "INSERT INTO reports (title,content,level,report_type,group_id,group_name,agent_id,personnes_concernees,agents_concernes,vehicules,plaques,armes,numeros_serie) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        [
-            title,
-            content,
-            level,
-            "Compte-rendu",
-            group_id || null,
-            group_name || null,
-            req.session.user ? req.session.user.id : null,
-            personnes_concernees,
-            agents_concernes,
-            vehicules,
-            plaques,
-            armes,
-            numeros_serie
-        ],
-        async (err)=>{
-            if(err){
-                console.error("Erreur INSERT reports:", err)
-                return res.send("Erreur lors de la création du rapport")
-            }
+    const createReport = ()=>{
+        db.query(
+            "INSERT INTO reports (title,content,level,report_type,group_id,group_name,agent_id,personnes_concernees,agents_concernes,vehicules,plaques,armes,numeros_serie) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            [
+                title,
+                content,
+                reportLevel,
+                reportType,
+                group_id || null,
+                group_name || null,
+                req.session.user.id,
+                personnes_concernees,
+                agents_concernes,
+                vehicules,
+                plaques,
+                armes,
+                numeros_serie
+            ],
+            async (err)=>{
+                if(err){
+                    console.error("Erreur INSERT reports:", err)
+                    return res.send("Erreur lors de la création du rapport")
+                }
 
-            await logToWebhook(`📄 Nouveau rapport : ${title}`)
-            res.redirect("/reports")
-        }
-    )
+                await logToWebhook(`📄 Nouveau rapport : ${title}`)
+                res.redirect("/reports")
+            }
+        )
+    }
+
+    if(group_id){
+        db.query(accessibleGroupQuery("id"), accessibleGroupParams(group_id, req.session.user), (groupErr, accessibleGroups)=>{
+            if(groupErr) return res.status(500).send("Erreur lors de la vérification du dossier")
+            if(!accessibleGroups.length) return res.status(404).send("Dossier groupe introuvable")
+            createReport()
+        })
+        return
+    }
+    createReport()
 
 })
 

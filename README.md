@@ -93,12 +93,12 @@ Chaque fiche peut également contenir plusieurs photos ou images, consultables d
 Les rapports peuvent contenir :
 
 - un titre et une description détaillée ;
-- un niveau de confidentialité ;
+- un niveau de confidentialité de 1 (public) à 4 (très secret), sur la même échelle que les accréditations ;
 - les personnes et agents concernés ;
 - les véhicules et plaques d'immatriculation ;
 - les armes et numéros de série.
 
-Un rapport peut être consulté, modifié ou supprimé. L'agent ayant créé le rapport est conservé dans la base de données.
+Les agents accèdent aux rapports correspondant à leur accréditation : une accréditation 1 donne accès à tous les niveaux, tandis qu'une accréditation 4 donne accès aux rapports publics. L'auteur conserve l'accès à ses propres rapports, quel que soit leur niveau.
 
 ### ✉️ Messagerie interne
 

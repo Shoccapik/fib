@@ -60,6 +60,10 @@
                     <label for="report-type">Type de rapport</label>
                     <select id="report-type" name="report_type">
                         <option value="Compte-rendu">Compte-rendu opérationnel</option>
+                        <option value="Rapport d'incident">Rapport d'incident</option>
+                        <option value="Rapport de vadrouille">Rapport de vadrouille</option>
+                        <option value="Rapport de tir">Rapport de tir</option>
+                        <option value="Rapport d'altercation">Rapport d'altercation</option>
                         <option value="Dossier">Dossier groupe</option>
                     </select>
                 </div>
@@ -72,9 +76,7 @@
                 <div class="report-field report-field-level">
                     <label for="report-level">Niveau de confidentialité</label>
                     <select id="report-level" name="level">
-                        <option value="1">Public</option>
-                        <option value="2">Confidentiel</option>
-                        <option value="3">Secret</option>
+                        <% Object.entries(reportLevels).forEach(([level, label]) => { %><option value="<%= level %>"><%= label %></option><% }) %>
                     </select>
                 </div>
 
@@ -141,7 +143,8 @@
 
                     <div class="report-card-topline">
                         <span class="report-reference">Dossier #<%= report.id %></span>
-                        <span class="report-level level-<%= report.level %>"><%= report.level === 1 ? 'Public' : report.level === 2 ? 'Confidentiel' : 'Secret' %></span>
+                        <span class="report-type"><%= reportTypeLabel(report.report_type) %></span>
+                        <span class="report-level level-<%= report.level %>"><%= report.level_label %></span>
                     </div>
                     <% if (report.group_name || report.group_id) { %>
                     <a class="report-group-link" href="<%= report.group_id ? '/groups/' + report.group_id : '/reports/groups/' + encodeURIComponent(report.group_name) %>">Dossier groupe : <%= report.group_name || ('Groupe #' + report.group_id) %> <span>›</span></a>
@@ -182,7 +185,18 @@
         dossierFields.classList.toggle('is-visible', isDossier)
         dossierFields.querySelectorAll('textarea, input').forEach(field => { field.required = false })
         document.querySelector('#report-title').previousElementSibling.textContent = isDossier ? 'Nom du dossier' : 'Titre du rapport'
-        document.querySelector('#report-content').required = !isDossier
+        const content = document.querySelector('#report-content')
+        const contentPrompts = {
+            'Compte-rendu': 'Décrivez les faits, le contexte et les actions menées...',
+            "Rapport d'incident": 'Précisez la date, le lieu, les faits, les personnes impliquées et les suites données...',
+            'Rapport de vadrouille': 'Indiquez le parcours, les horaires, les observations et les contrôles effectués...',
+            'Rapport de tir': 'Décrivez les circonstances, le lieu, les tirs, les personnes touchées et les éléments recueillis...',
+            "Rapport d'altercation": 'Décrivez le déroulement, les personnes et témoins présents, les blessures et les mesures prises...'
+        }
+        content.required = !isDossier
+        content.placeholder = isDossier
+            ? 'Informations générales sur le groupe (facultatif)...'
+            : contentPrompts[reportType.value] || contentPrompts['Compte-rendu']
     }
     reportType.addEventListener('change', updateReportType)
     updateReportType()

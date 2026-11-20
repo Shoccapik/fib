@@ -48,7 +48,12 @@ db.ready = new Promise((resolve, reject)=>{
     let index = 0
     const next = (migrationErr) => {
         if(migrationErr) return reject(migrationErr)
-        if(index === requiredColumns.length) return resolve()
+        if(index === requiredColumns.length){
+            return db.query("UPDATE reports SET level = 1 WHERE level IS NULL OR level < 1 OR level > 4", updateErr=>{
+                if(updateErr) return reject(updateErr)
+                resolve()
+            })
+        }
         const [table, column, definition] = requiredColumns[index++]
         ensureColumn(table, column, definition, next)
     }

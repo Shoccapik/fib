@@ -3,6 +3,7 @@ const router = express.Router()
 const db = require("../config/database")
 const auth = require("../middleware/auth")
 const logToWebhook = require("../utils/logger")
+const {reportAccessCondition, reportAccessParams} = require("../utils/reportAccess")
 const multer = require("multer")
 const path = require("path")
 const fs = require("fs")
@@ -287,8 +288,12 @@ router.get("/:id", auth, (req,res)=>{
         const name = `${citizen.prenom} ${citizen.nom}`.trim()
 
         db.query(
-            "SELECT r.*, u.username AS agent_username FROM reports r LEFT JOIN users u ON r.agent_id = u.id WHERE r.personnes_concernees LIKE ? OR r.agents_concernes LIKE ? ORDER BY r.created_at DESC",
-            [`%${name}%`,`%${name}%`],
+            `SELECT r.*, u.username AS agent_username FROM reports r
+             LEFT JOIN users u ON r.agent_id = u.id
+             WHERE (r.personnes_concernees LIKE ? OR r.agents_concernes LIKE ?)
+             AND ${reportAccessCondition()}
+             ORDER BY r.created_at DESC`,
+            [`%${name}%`,`%${name}%`, ...reportAccessParams(req.session.user)],
             (err2, reports)=>{
                 if(err2){
                     console.error("Erreur SELECT reports lié au citoyen:", err2)

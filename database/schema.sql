@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS reports (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(100),
     content TEXT,
-    level INT,
+    level INT NOT NULL DEFAULT 1,
     group_name VARCHAR(100),
         report_type VARCHAR(30) NOT NULL DEFAULT 'Compte-rendu',
         claims TEXT,

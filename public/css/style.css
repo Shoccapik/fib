@@ -1810,6 +1810,17 @@ body:not(.login-body) {
     font-weight: 700;
 }
 
+.report-type {
+    margin-left: auto;
+    padding: 5px 9px;
+    border: 1px solid rgba(59, 130, 246, .3);
+    border-radius: 999px;
+    background: rgba(37, 99, 235, .1);
+    color: #93c5fd;
+    font-size: 11px;
+    font-weight: 700;
+}
+
 .level-1 {
     border-color: rgba(34, 197, 94, .35);
     background: rgba(34, 197, 94, .1);
@@ -1826,6 +1837,12 @@ body:not(.login-body) {
     border-color: rgba(239, 68, 68, .35);
     background: rgba(239, 68, 68, .1);
     color: #fca5a5;
+}
+
+.level-4 {
+    border-color: rgba(239, 68, 68, .55);
+    background: rgba(239, 68, 68, .2);
+    color: #fecaca;
 }
 
 .report-card h3 {

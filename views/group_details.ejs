@@ -51,7 +51,7 @@
                 <% reports.forEach(report => { %>
                     <a class="group-report-row" href="/reports/<%= report.id %>">
                         <span class="report-reference">#<%= report.id %></span>
-                        <span><strong><%= report.title %></strong><small><%= report.content.substring(0, 120) %><%= report.content.length > 120 ? '...' : '' %></small></span>
+                        <span><strong><%= report.title %></strong><small><%= reportTypeLabel(report.report_type) %> · <%= report.content.substring(0, 120) %><%= report.content.length > 120 ? '...' : '' %></small></span>
                         <span class="group-row-arrow">›</span>
                     </a>
                 <% }) %>

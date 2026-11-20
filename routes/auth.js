@@ -2,6 +2,7 @@ const express = require("express")
 const router = express.Router()
 const db = require("../config/database")
 const bcrypt = require("bcrypt")
+const {reportAccessCondition, reportAccessParams} = require("../utils/reportAccess")
 
 router.get("/", (req,res)=>{
     res.render("login")
@@ -96,7 +97,7 @@ router.get("/dashboard", isAuth, (req,res)=>{
     db.query("SELECT COUNT(DISTINCT user_id) AS on_duty FROM service_logs WHERE end_time IS NULL", (err0, activeAgents)=>{
         const onDuty = (!err0 && activeAgents[0]) ? activeAgents[0].on_duty : 0
 
-        db.query("SELECT COUNT(*) AS totalReports FROM reports", (err1, repCount)=>{
+        db.query(`SELECT COUNT(*) AS totalReports FROM reports r WHERE ${reportAccessCondition()}`, reportAccessParams(req.session.user), (err1, repCount)=>{
             const totalReports = (!err1 && repCount[0]) ? repCount[0].totalReports : 0
 
             db.query("SELECT COUNT(*) AS totalCitizens FROM citizens", (err2, citCount)=>{
@@ -116,7 +117,7 @@ router.get("/dashboard", isAuth, (req,res)=>{
                         }))
 
                         // Fetch recent reports and citizens for activity
-                        db.query("SELECT id, title, created_at FROM reports ORDER BY created_at DESC LIMIT 5", (err5, reports)=>{
+                        db.query(`SELECT r.id, r.title, r.created_at FROM reports r WHERE ${reportAccessCondition()} ORDER BY r.created_at DESC LIMIT 5`, reportAccessParams(req.session.user), (err5, reports)=>{
                             if(err5) reports = []
                             db.query("SELECT id, nom, prenom FROM citizens ORDER BY id DESC LIMIT 5", (err6, citizens)=>{
                                 if(err6) citizens = []
