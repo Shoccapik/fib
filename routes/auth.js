@@ -103,41 +103,58 @@ router.get("/dashboard", isAuth, (req,res)=>{
             db.query("SELECT COUNT(*) AS totalCitizens FROM citizens", (err2, citCount)=>{
                 const totalCitizens = (!err2 && citCount[0]) ? citCount[0].totalCitizens : 0
 
-                db.query("SELECT u.username, SUM(TIMESTAMPDIFF(SECOND, s.start_time, COALESCE(s.end_time, NOW()))) AS sec FROM service_logs s JOIN users u ON s.user_id = u.id GROUP BY u.id ORDER BY sec DESC LIMIT 5", (err3, serviceRanking)=>{
-                    const ranking = err3 ? [] : (serviceRanking || [])
+                db.query(
+                    `SELECT u.username, GREATEST(0,
+                        IFNULL(SUM(TIMESTAMPDIFF(SECOND, s.start_time, COALESCE(s.end_time, s.pause_time, NOW()))),0)
+                        + IFNULL((SELECT SUM(a.adjusted_seconds) FROM service_time_adjustments a WHERE a.user_id = u.id),0)
+                    ) AS sec
+                    FROM users u
+                    LEFT JOIN service_logs s ON s.user_id = u.id
+                    GROUP BY u.id
+                    HAVING sec > 0
+                    ORDER BY sec DESC
+                    LIMIT 5`,
+                    (err3, serviceRanking)=>{
+                        const ranking = err3 ? [] : (serviceRanking || [])
 
-                    db.query("SELECT IFNULL(SUM(TIMESTAMPDIFF(SECOND, start_time, COALESCE(end_time, NOW()))),0) AS totalSeconds FROM service_logs", (err4, totalSecRes)=>{
-                        const totalSeconds = (!err4 && totalSecRes[0]) ? totalSecRes[0].totalSeconds : 0
-                        const totalServiceDuration = formatSeconds(totalSeconds)
+                        db.query(
+                            `SELECT GREATEST(0,
+                                IFNULL(SUM(TIMESTAMPDIFF(SECOND, start_time, COALESCE(end_time, pause_time, NOW()))),0)
+                                + IFNULL((SELECT SUM(adjusted_seconds) FROM service_time_adjustments),0)
+                            ) AS totalSeconds
+                            FROM service_logs`,
+                            (err4, totalSecRes)=>{
+                                const totalSeconds = (!err4 && totalSecRes[0]) ? totalSecRes[0].totalSeconds : 0
+                                const totalServiceDuration = formatSeconds(totalSeconds)
 
-                        const ranked = (ranking || []).map(user=>({
-                            ...user,
-                            duration: formatSeconds(user.sec || 0),
-                            hours: (user.sec || 0) / 3600
-                        }))
+                                const ranked = (ranking || []).map(user=>({
+                                    ...user,
+                                    duration: formatSeconds(user.sec || 0),
+                                    hours: (user.sec || 0) / 3600
+                                }))
 
-                        // Fetch recent reports and citizens for activity
-                        db.query(`SELECT r.id, r.title, r.created_at FROM reports r WHERE ${reportAccessCondition()} ORDER BY r.created_at DESC LIMIT 5`, reportAccessParams(req.session.user), (err5, reports)=>{
-                            if(err5) reports = []
-                            db.query("SELECT id, nom, prenom FROM citizens ORDER BY id DESC LIMIT 5", (err6, citizens)=>{
-                                if(err6) citizens = []
+                                // Fetch recent reports and citizens for activity
+                                db.query(`SELECT r.id, r.title, r.created_at FROM reports r WHERE ${reportAccessCondition()} ORDER BY r.created_at DESC LIMIT 5`, reportAccessParams(req.session.user), (err5, reports)=>{
+                                    if(err5) reports = []
+                                    db.query("SELECT id, nom, prenom FROM citizens ORDER BY id DESC LIMIT 5", (err6, citizens)=>{
+                                        if(err6) citizens = []
 
-                                res.render("dashboard", {
-                                    user: req.session.user,
-                                    recentReports: reports,
-                                    recentCitizens: citizens,
-                                    onDuty,
-                                    totalReports,
-                                    totalCitizens,
-                                    totalServiceDuration,
-                                    serviceRanking: ranked
+                                        res.render("dashboard", {
+                                            user: req.session.user,
+                                            recentReports: reports,
+                                            recentCitizens: citizens,
+                                            onDuty,
+                                            totalReports,
+                                            totalCitizens,
+                                            totalServiceDuration,
+                                            serviceRanking: ranked
+                                        })
+                                    })
                                 })
+
                             })
-                        })
 
                     })
-
-                })
 
             })
 

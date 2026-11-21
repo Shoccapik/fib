@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin Compte - FIB</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="layout">
+    <nav class="sidebar" aria-label="Navigation principale">
+        <img src="/images/FIB_V2.png" alt="Logo FIB" class="sidebar-logo">
+        <a href="/auth/dashboard">Dashboard</a>
+        <a href="/citizens">Citoyens</a>
+        <a href="/reports">Rapports</a>
+        <a href="/groups">Dossiers groupes</a>
+        <a href="/service">Service</a>
+        <a href="/messages">Messages</a>
+        <% if (user && Number(user.accreditation) === 1) { %>
+        <a href="/users/admin-account" class="active" aria-current="page">Admin Compte</a>
+        <a href="/users/admin">Admin Utilisateurs</a>
+        <a href="/logs/admin">Admin Logs</a>
+        <% } %>
+        <div class="logout"><a href="/logout">Déconnexion</a></div>
+    </nav>
+
+    <main class="main account-admin-page">
+        <header class="topbar account-admin-topbar">
+            <div>
+                <p class="page-kicker">Administration · Accréditation 1</p>
+                <h1>Admin Compte</h1>
+                <p class="subtitle">Gérez le nom des comptes et corrigez le temps de service des autres agents.</p>
+            </div>
+            <span class="account-admin-count"><%= accounts.length %> compte<%= accounts.length === 1 ? '' : 's' %></span>
+        </header>
+
+        <% if (notice) { %>
+        <div class="account-admin-notice account-admin-notice-<%= notice.type %>" role="status"><%= notice.text %></div>
+        <% } %>
+
+        <section class="account-admin-intro">
+            <span class="account-admin-intro-mark" aria-hidden="true">FIB</span>
+            <div>
+                <strong>Gestion des comptes agents</strong>
+                <p>Les ajustements de service sont enregistrés avec leur motif. Votre propre compte n’est pas modifiable depuis cette page.</p>
+            </div>
+        </section>
+
+        <section class="account-admin-list" aria-label="Comptes des autres agents">
+            <% if (accounts.length === 0) { %>
+            <div class="account-admin-empty">
+                <strong>Aucun autre compte à gérer</strong>
+                <p>Les comptes agents apparaîtront ici.</p>
+            </div>
+            <% } %>
+
+            <% accounts.forEach(account => { %>
+            <article class="account-admin-card">
+                <header class="account-admin-card-heading">
+                    <span class="account-admin-avatar"><%= account.username.charAt(0).toUpperCase() %></span>
+                    <div class="account-admin-identity">
+                        <p>Compte #<%= account.id %></p>
+                        <h2><%= account.username %></h2>
+                        <span><%= account.grade_title || 'Grade non défini' %> · Accréditation <%= account.accreditation %></span>
+                    </div>
+                    <div class="account-admin-total">
+                        <span>Temps de service cumulé</span>
+                        <strong><%= account.serviceDuration %></strong>
+                    </div>
+                </header>
+
+                <div class="account-admin-forms">
+                    <form method="POST" action="/users/admin-account/<%= account.id %>/name" class="account-admin-name-form">
+                        <div class="account-admin-form-heading">
+                            <span class="account-admin-form-icon" aria-hidden="true">01</span>
+                            <div><h3>Nom du compte</h3><p>Le changement sera repris dans les messages existants.</p></div>
+                        </div>
+                        <label for="username-<%= account.id %>">Nom d’utilisateur</label>
+                        <div class="account-admin-name-controls">
+                            <input id="username-<%= account.id %>" name="username" value="<%= account.username %>" maxlength="50" autocomplete="off" required>
+                            <button type="submit" class="account-admin-secondary-button">Enregistrer</button>
+                        </div>
+                    </form>
+
+                    <form method="POST" action="/users/admin-account/<%= account.id %>/service-time" class="account-admin-time-form">
+                        <div class="account-admin-form-heading">
+                            <span class="account-admin-form-icon" aria-hidden="true">02</span>
+                            <div><h3>Temps de service</h3><p>Ajoutez ou retirez une durée du cumul enregistré.</p></div>
+                        </div>
+                        <div class="account-admin-time-fields">
+                            <label>
+                                <span>Action</span>
+                                <select name="direction">
+                                    <option value="add">Ajouter du temps</option>
+                                    <option value="remove">Retirer du temps</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Heures</span>
+                                <input name="hours" type="number" min="0" step="1" value="0" required>
+                            </label>
+                            <label>
+                                <span>Minutes</span>
+                                <input name="minutes" type="number" min="0" max="59" step="1" value="0" required>
+                            </label>
+                        </div>
+                        <label class="account-admin-reason">
+                            <span>Motif de la correction</span>
+                            <input name="reason" maxlength="255" placeholder="Ex. Correction d’un oubli de fin de service" required>
+                        </label>
+                        <button type="submit" class="account-admin-primary-button">Appliquer la correction</button>
+                    </form>
+                </div>
+            </article>
+            <% }) %>
+        </section>
+    </main>
+</div>
+<script src="/js/site-presence.js" data-user-id="<%= user.id %>"></script>
+</body>
+</html>

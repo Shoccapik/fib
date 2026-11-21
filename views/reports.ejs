@@ -20,6 +20,7 @@
         <a href="/service">Service</a>
         <a href="/messages">Messages</a>
         <% if (user && user.accreditation <= 2) { %>
+        <% if (user.accreditation === 1) { %><a href="/users/admin-account">Admin Compte</a><% } %>
         <a href="/users/admin">Admin Utilisateurs</a>
         <a href="/logs/admin">Admin Logs</a>
         <% } %>

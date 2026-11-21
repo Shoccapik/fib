@@ -1,156 +1,209 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin - Gestion Utilisateurs</title>
+    <title>Administration des utilisateurs - FIB</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-
 <div class="layout">
-
-    <!-- SIDEBAR -->
-    <div class="sidebar">
+    <nav class="sidebar" aria-label="Navigation principale">
         <img src="/images/FIB_V2.png" alt="Logo FIB" class="sidebar-logo">
-
-        <a href="/auth/dashboard" class="active">Dashboard</a>
+        <a href="/auth/dashboard">Dashboard</a>
         <a href="/citizens">Citoyens</a>
         <a href="/reports">Rapports</a>
         <a href="/service">Service</a>
         <a href="/messages">Messages</a>
         <% if (user && user.accreditation <= 2) { %>
-        <a href="/users/admin">Admin Utilisateurs</a>
+        <% if (user.accreditation === 1) { %><a href="/users/admin-account">Admin Compte</a><% } %>
+        <a href="/users/admin" class="active" aria-current="page">Admin Utilisateurs</a>
         <a href="/logs/admin">Admin Logs</a>
         <% } %>
-
         <div class="logout">
             <a href="/logout">Déconnexion</a>
         </div>
-    </div>
+    </nav>
 
-    <!-- MAIN -->
-    <div class="main">
+    <main class="main users-admin-page">
+        <header class="topbar users-admin-topbar">
+            <div class="users-admin-heading">
+                <p class="users-admin-eyebrow">Administration · Comptes agents</p>
+                <h1>Gestion des utilisateurs</h1>
+                <p class="subtitle">Consultez les profils et gérez grades et niveaux d’accréditation.</p>
+            </div>
+            <div class="user-info users-admin-session">
+                <span>Agent : <strong><%= user.username %></strong></span>
+                <span class="users-admin-access"><span aria-hidden="true"></span> Accès administrateur</span>
+            </div>
+        </header>
 
-        <!-- TOPBAR -->
-        <div class="topbar">
-            <div>
-                <h1>👥 Gestion des Utilisateurs</h1>
-                <p class="subtitle">Administration des comptes utilisateur (<%= users.length %> agents)</p>
+        <section class="users-admin-summary" aria-label="Répartition des comptes filtrés">
+            <article class="users-admin-stat users-admin-stat-level1">
+                <span class="users-admin-stat-mark" aria-hidden="true">01</span>
+                <div><span>Niveau 1</span><strong><%= (Number(summary.level1) || 0).toLocaleString("fr-FR") %></strong></div>
+            </article>
+            <article class="users-admin-stat users-admin-stat-level2">
+                <span class="users-admin-stat-mark" aria-hidden="true">02</span>
+                <div><span>Niveau 2</span><strong><%= (Number(summary.level2) || 0).toLocaleString("fr-FR") %></strong></div>
+            </article>
+            <article class="users-admin-stat users-admin-stat-level3">
+                <span class="users-admin-stat-mark" aria-hidden="true">03</span>
+                <div><span>Niveau 3</span><strong><%= (Number(summary.level3) || 0).toLocaleString("fr-FR") %></strong></div>
+            </article>
+            <article class="users-admin-stat users-admin-stat-level4">
+                <span class="users-admin-stat-mark" aria-hidden="true">04</span>
+                <div><span>Niveau 4</span><strong><%= (Number(summary.level4) || 0).toLocaleString("fr-FR") %></strong></div>
+            </article>
+        </section>
+
+        <section class="users-admin-filters" aria-labelledby="users-admin-filter-heading">
+            <div class="users-admin-section-heading">
+                <div>
+                    <p class="users-admin-eyebrow">Trouver un compte</p>
+                    <h2 id="users-admin-filter-heading">Recherche et filtres</h2>
+                </div>
+                <a href="/users/admin" class="users-admin-reset">Réinitialiser</a>
             </div>
 
-            <div class="user-info">
-                <span>Agent : <%= user.username %></span>
-                <span class="online">● En ligne</span>
-            </div>
-        </div>
+            <form method="GET" action="/users/admin" class="users-admin-filter-form">
+                <label class="users-admin-search">
+                    <span>Recherche</span>
+                    <input type="search" name="q" value="<%= filters.q %>" maxlength="100" placeholder="Nom, grade ou numéro de compte…">
+                </label>
+                <label>
+                    <span>Accréditation</span>
+                    <select name="accreditation">
+                        <option value="all" <%= filters.accreditation === "all" ? "selected" : "" %>>Tous les niveaux</option>
+                        <option value="1" <%= filters.accreditation === "1" ? "selected" : "" %>>Niveau 1</option>
+                        <option value="2" <%= filters.accreditation === "2" ? "selected" : "" %>>Niveau 2</option>
+                        <option value="3" <%= filters.accreditation === "3" ? "selected" : "" %>>Niveau 3</option>
+                        <option value="4" <%= filters.accreditation === "4" ? "selected" : "" %>>Niveau 4</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Grade</span>
+                    <select name="grade">
+                        <option value="all" <%= filters.grade === "all" ? "selected" : "" %>>Tous les grades</option>
+                        <% gradeOptions.forEach(grade => { %>
+                        <option value="<%= grade %>" <%= filters.grade === grade ? "selected" : "" %>><%= grade %></option>
+                        <% }) %>
+                        <option value="none" <%= filters.grade === "none" ? "selected" : "" %>>Non défini</option>
+                    </select>
+                </label>
+                <button type="submit" class="users-admin-filter-submit">
+                    <span aria-hidden="true">⌕</span>
+                    Appliquer les filtres
+                </button>
+            </form>
+        </section>
 
-        <!-- CONTENT -->
-        <div class="admin-content">
-            <!-- STATS -->
-            <div class="stats-grid">
-                <%
-                    const level1Count = users.filter(u => u.accreditation === 1).length;
-                    const level2Count = users.filter(u => u.accreditation === 2).length;
-                    const level3Count = users.filter(u => u.accreditation === 3).length;
-                    const level4Count = users.filter(u => u.accreditation === 4).length;
+        <section class="users-admin-results" aria-labelledby="users-admin-results-heading">
+            <header class="users-admin-results-heading">
+                <div>
+                    <h2 id="users-admin-results-heading">Comptes agents</h2>
+                    <p>
+                        <% if (total) { %>
+                        Résultats <strong><%= firstEntry %>–<%= lastEntry %></strong> sur <strong><%= total.toLocaleString("fr-FR") %></strong> compte<%= total === 1 ? "" : "s" %>
+                        <% } else { %>
+                        Aucun compte ne correspond à ces critères.
+                        <% } %>
+                    </p>
+                </div>
+                <% if (totalPages > 1) { %>
+                <nav class="users-admin-pagination" aria-label="Pagination des comptes">
+                    <% if (previousPageUrl) { %><a href="<%= previousPageUrl %>" aria-label="Page précédente">← Précédent</a><% } %>
+                    <span>Page <strong><%= currentPage %></strong> / <%= totalPages %></span>
+                    <% if (nextPageUrl) { %><a href="<%= nextPageUrl %>" aria-label="Page suivante">Suivant →</a><% } %>
+                </nav>
+                <% } %>
+            </header>
+
+            <% if (users.length) { %>
+            <div class="users-admin-list">
+                <% users.forEach(account => {
+                    const level = Number(account.accreditation) || 4;
+                    const accountName = String(account.username || "");
+                    const avatar = accountName.trim().charAt(0).toLocaleUpperCase("fr-FR") || "?";
+                    const hasKnownGrade = gradeOptions.includes(account.grade_title);
                 %>
-                <div class="stat-card">
-                    <div class="stat-icon">👑</div>
-                    <div class="stat-number"><%= level1Count %></div>
-                    <div class="stat-label">Niveau 1</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">⭐</div>
-                    <div class="stat-number"><%= level2Count %></div>
-                    <div class="stat-label">Niveau 2</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🛡️</div>
-                    <div class="stat-number"><%= level3Count %></div>
-                    <div class="stat-label">Niveau 3</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🎓</div>
-                    <div class="stat-number"><%= level4Count %></div>
-                    <div class="stat-label">Niveau 4</div>
-                </div>
+                <article class="users-admin-card">
+                    <header class="users-admin-card-heading">
+                        <span class="users-admin-avatar" aria-hidden="true"><%= avatar %></span>
+                        <div class="users-admin-identity">
+                            <span class="users-admin-account-id">Compte #<%= account.id %></span>
+                            <h3><%= account.username || "Compte sans nom" %></h3>
+                            <span class="users-admin-current-grade"><%= account.grade_title || "Grade non défini" %></span>
+                        </div>
+                        <span class="users-admin-level users-admin-level-<%= level %>">Accréditation · Niveau <%= level %></span>
+                    </header>
+
+                    <% if (Number(user.accreditation) === 1) { %>
+                    <form method="POST" action="/users/admin/update" class="users-admin-edit-form">
+                        <input type="hidden" name="userId" value="<%= account.id %>">
+                        <label>
+                            <span>Grade</span>
+                            <select name="grade_title">
+                                <option value="" <%= hasKnownGrade ? "" : "selected" %>>Non défini</option>
+                                <optgroup label="Direction">
+                                    <option value="Director" <%= account.grade_title === "Director" ? "selected" : "" %>>Director</option>
+                                    <option value="Deputy Director" <%= account.grade_title === "Deputy Director" ? "selected" : "" %>>Deputy Director</option>
+                                    <option value="Associate Deputy Director" <%= account.grade_title === "Associate Deputy Director" ? "selected" : "" %>>Associate Deputy Director</option>
+                                </optgroup>
+                                <optgroup label="Commandement">
+                                    <option value="Special Agent In Charge" <%= account.grade_title === "Special Agent In Charge" ? "selected" : "" %>>Special Agent In Charge</option>
+                                    <option value="Assistant Special Agent In Charge" <%= account.grade_title === "Assistant Special Agent In Charge" ? "selected" : "" %>>Assistant Special Agent In Charge</option>
+                                    <option value="Deputy Special Agent In Charge" <%= account.grade_title === "Deputy Special Agent In Charge" ? "selected" : "" %>>Deputy Special Agent In Charge</option>
+                                    <option value="Supervisory Special Agent" <%= account.grade_title === "Supervisory Special Agent" ? "selected" : "" %>>Supervisory Special Agent</option>
+                                </optgroup>
+                                <optgroup label="Agents">
+                                    <option value="Special Agent" <%= account.grade_title === "Special Agent" ? "selected" : "" %>>Special Agent</option>
+                                    <option value="Probation Agent" <%= account.grade_title === "Probation Agent" ? "selected" : "" %>>Probation Agent</option>
+                                </optgroup>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Niveau d’accréditation</span>
+                            <select name="accreditation">
+                                <option value="1" <%= level === 1 ? "selected" : "" %>>Niveau 1</option>
+                                <option value="2" <%= level === 2 ? "selected" : "" %>>Niveau 2</option>
+                                <option value="3" <%= level === 3 ? "selected" : "" %>>Niveau 3</option>
+                                <option value="4" <%= level === 4 ? "selected" : "" %>>Niveau 4</option>
+                            </select>
+                        </label>
+                        <button type="submit" class="users-admin-save">
+                            <span aria-hidden="true">✓</span>
+                            Enregistrer
+                        </button>
+                    </form>
+                    <% } else { %>
+                    <div class="users-admin-readonly">
+                        <span aria-hidden="true">i</span>
+                        Modification réservée à l’accréditation 1
+                    </div>
+                    <% } %>
+                </article>
+                <% }) %>
             </div>
+            <% } else { %>
+            <div class="users-admin-empty">
+                <span aria-hidden="true">—</span>
+                <h3>Aucun compte trouvé</h3>
+                <p>Essayez de modifier votre recherche ou vos filtres.</p>
+                <a href="/users/admin">Effacer les filtres</a>
+            </div>
+            <% } %>
 
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Username</th>
-                        <th>Grade</th>
-                        <th>Accréditation</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% users.forEach(u => { %>
-                    <%
-                        let userClass = 'user-level-' + u.accreditation;
-                        let levelIcon = '';
-                        switch(u.accreditation) {
-                            case 1: levelIcon = '👑'; break;
-                            case 2: levelIcon = '⭐'; break;
-                            case 3: levelIcon = '🛡️'; break;
-                            case 4: levelIcon = '🎓'; break;
-                        }
-                    %>
-                    <tr class="<%= userClass %>">
-                        <td><%= u.id %></td>
-                        <td><%= u.username %></td>
-                        <td><span class="level-icon"><%= levelIcon %></span> <%= u.grade_title || 'Non défini' %></td>
-                        <td><span class="accred-badge accred-<%= u.accreditation %>">Niveau <%= u.accreditation %></span></td>
-                        <td>
-                            <% if (user.accreditation === 1) { %>
-                            <form method="POST" action="/users/admin/update" class="inline-form">
-                                <input type="hidden" name="userId" value="<%= u.id %>">
-                                <label class="admin-field-label" for="grade-<%= u.id %>">Grade</label>
-                                <select id="grade-<%= u.id %>" name="grade_title">
-                                    <option value="" disabled>Choisir un grade</option>
-                                    <optgroup label="Grades - Direction">
-                                        <option value="Director" <%= u.grade_title === 'Director' ? 'selected' : '' %>>Director</option>
-                                        <option value="Deputy Director" <%= u.grade_title === 'Deputy Director' ? 'selected' : '' %>>Deputy Director</option>
-                                        <option value="Associate Deputy Director" <%= u.grade_title === 'Associate Deputy Director' ? 'selected' : '' %>>Associate Deputy Director</option>
-                                    </optgroup>
-                                    <optgroup label="Grades - Commandement">
-                                        <option value="Special Agent In Charge" <%= u.grade_title === 'Special Agent In Charge' ? 'selected' : '' %>>Special Agent In Charge</option>
-                                        <option value="Assistant Special Agent In Charge" <%= u.grade_title === 'Assistant Special Agent In Charge' ? 'selected' : '' %>>Assistant Special Agent In Charge</option>
-                                        <option value="Deputy Special Agent In Charge" <%= u.grade_title === 'Deputy Special Agent In Charge' ? 'selected' : '' %>>Deputy Special Agent In Charge</option>
-                                        <option value="Supervisory Special Agent" <%= u.grade_title === 'Supervisory Special Agent' ? 'selected' : '' %>>Supervisory Special Agent</option>
-                                    </optgroup>
-                                    <optgroup label="Grades - Agent">
-                                        <option value="Special Agent" <%= u.grade_title === 'Special Agent' ? 'selected' : '' %>>Special Agent</option>
-                                    </optgroup>
-                                    <optgroup label="Grades - Probatoire">
-                                        <option value="Probation Agent" <%= u.grade_title === 'Probation Agent' ? 'selected' : '' %>>Probation Agent</option>
-                                    </optgroup>
-                                </select>
-                                <label class="admin-field-label" for="accreditation-<%= u.id %>">Accréditation</label>
-                                <select id="accreditation-<%= u.id %>" name="accreditation" aria-label="Niveau d'accréditation">
-                                    <option value="1" <%= u.accreditation === 1 ? 'selected' : '' %>>Niveau 1</option>
-                                    <option value="2" <%= u.accreditation === 2 ? 'selected' : '' %>>Niveau 2</option>
-                                    <option value="3" <%= u.accreditation === 3 ? 'selected' : '' %>>Niveau 3</option>
-                                    <option value="4" <%= u.accreditation === 4 ? 'selected' : '' %>>Niveau 4</option>
-                                </select>
-                                <button type="submit" class="btn-small">✏️ Mettre à jour</button>
-                            </form>
-                            <% } else { %>
-                            <span>Non autorisé</span>
-                            <% } %>
-                        </td>
-                    </tr>
-                    <% }) %>
-                </tbody>
-            </table>
-        </div>
-
-    </div>
-
+            <% if (totalPages > 1) { %>
+            <footer class="users-admin-pagination-footer">
+                <% if (previousPageUrl) { %><a href="<%= previousPageUrl %>">← Page précédente</a><% } else { %><span></span><% } %>
+                <span><%= firstEntry %>–<%= lastEntry %> sur <%= total.toLocaleString("fr-FR") %></span>
+                <% if (nextPageUrl) { %><a href="<%= nextPageUrl %>">Page suivante →</a><% } %>
+            </footer>
+            <% } %>
+        </section>
+    </main>
 </div>
-
 <script src="/js/site-presence.js" data-user-id="<%= user.id %>"></script>
 </body>
 </html>

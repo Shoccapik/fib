@@ -85,6 +85,16 @@ end_time DATETIME,
 pause_time DATETIME
 );
 
+CREATE TABLE IF NOT EXISTS service_time_adjustments(
+id INT AUTO_INCREMENT PRIMARY KEY,
+user_id INT NOT NULL,
+adjusted_seconds BIGINT NOT NULL,
+reason VARCHAR(255) NOT NULL,
+actor_id INT NOT NULL,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+INDEX service_time_adjustments_user_idx (user_id)
+);
+
 CREATE TABLE logs(
 id INT AUTO_INCREMENT PRIMARY KEY,
 action TEXT,

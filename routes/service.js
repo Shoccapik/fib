@@ -3,8 +3,6 @@ const router = express.Router()
 const db = require("../config/database")
 const auth = require("../middleware/auth")
 
-const pendingServiceEnds = new Map()
-
 function formatSeconds(seconds){
     const d = Math.floor(seconds / 86400)
     const h = Math.floor((seconds % 86400) / 3600)
@@ -43,32 +41,50 @@ router.get("/",auth,(req,res)=>{
         const state = activeLog ? "active" : (req.session.serviceMode === 'paused' ? 'paused' : 'inactive')
         const lastSegmentSeconds = pausedLog ? Math.floor((new Date(pausedLog.end_time) - new Date(pausedLog.start_time))/1000) : 0
 
-            db.query("SELECT IFNULL(SUM(TIMESTAMPDIFF(SECOND, start_time, COALESCE(end_time, pause_time, NOW()))),0) AS totalSeconds FROM service_logs WHERE user_id = ?", [userId], (err2, totalRes)=>{
-            if(err2) return res.send("Erreur service")
+        db.query(
+            `SELECT GREATEST(0,
+                (SELECT IFNULL(SUM(TIMESTAMPDIFF(SECOND, start_time, COALESCE(end_time, pause_time, NOW()))),0) FROM service_logs WHERE user_id = ?)
+                + (SELECT IFNULL(SUM(adjusted_seconds),0) FROM service_time_adjustments WHERE user_id = ?)
+            ) AS totalSeconds`,
+            [userId, userId],
+            (err2, totalRes)=>{
+                if(err2) return res.send("Erreur service")
 
-            const totalSecondsUser = (totalRes && totalRes[0]) ? totalRes[0].totalSeconds : 0
-            const totalHoursUser = (totalSecondsUser / 3600).toFixed(2)
-            const totalDurationUser = formatSeconds(totalSecondsUser)
+                const totalSecondsUser = (totalRes && totalRes[0]) ? totalRes[0].totalSeconds : 0
+                const totalHoursUser = (totalSecondsUser / 3600).toFixed(2)
+                const totalDurationUser = formatSeconds(totalSecondsUser)
 
-            db.query("SELECT u.username, IFNULL(SUM(TIMESTAMPDIFF(SECOND, s.start_time, COALESCE(s.end_time, s.pause_time, NOW()))),0) AS totalSeconds FROM service_logs s JOIN users u ON s.user_id = u.id GROUP BY u.id ORDER BY totalSeconds DESC LIMIT 5", (err3, ranking)=>{
-                if(err3) ranking = []
+                db.query(
+                    `SELECT u.username, GREATEST(0,
+                        IFNULL(SUM(TIMESTAMPDIFF(SECOND, s.start_time, COALESCE(s.end_time, s.pause_time, NOW()))),0)
+                        + IFNULL((SELECT SUM(a.adjusted_seconds) FROM service_time_adjustments a WHERE a.user_id = u.id),0)
+                    ) AS totalSeconds
+                    FROM users u
+                    LEFT JOIN service_logs s ON s.user_id = u.id
+                    GROUP BY u.id
+                    HAVING totalSeconds > 0
+                    ORDER BY totalSeconds DESC
+                    LIMIT 5`,
+                    (err3, ranking)=>{
+                        if(err3) ranking = []
 
-                const rankingWithDuration = (ranking || []).map((entry)=>({
-                    ...entry,
-                    duration: formatSeconds(entry.totalSeconds || 0)
-                }))
+                        const rankingWithDuration = (ranking || []).map((entry)=>({
+                            ...entry,
+                            duration: formatSeconds(entry.totalSeconds || 0)
+                        }))
 
-                res.render("service", {
-                    user: req.session.user,
-                    serviceState: state || 'inactive',
-                    lastSegmentSeconds: lastSegmentSeconds || 0,
-                    totalHoursUser: totalHoursUser || '0.00',
-                    totalDurationUser: totalDurationUser || '00:00:00',
-                    ranking: rankingWithDuration || []
-                })
-            })
-
-        })
+                        res.render("service", {
+                            user: req.session.user,
+                            serviceState: state || 'inactive',
+                            lastSegmentSeconds: lastSegmentSeconds || 0,
+                            totalHoursUser: totalHoursUser || '0.00',
+                            totalDurationUser: totalDurationUser || '00:00:00',
+                            ranking: rankingWithDuration || []
+                        })
+                    }
+                )
+            }
+        )
     })
 })
 
@@ -179,44 +195,26 @@ router.post("/resume",auth,(req,res)=>{
 })
 
 router.post("/enter", auth, (req,res)=>{
-    const userId = req.session.user.id
-    const pendingEnd = pendingServiceEnds.get(userId)
-    if(pendingEnd){
-        clearTimeout(pendingEnd)
-        pendingServiceEnds.delete(userId)
-    }
     res.sendStatus(204)
 })
 
 router.post("/leave", auth, (req,res)=>{
     const userId = req.session.user.id
-    const pendingEnd = pendingServiceEnds.get(userId)
-    if(pendingEnd) clearTimeout(pendingEnd)
-
-    const timeout = setTimeout(()=>{
-        pendingServiceEnds.delete(userId)
-        finishService(userId, (err, result)=>{
-            if(err){
-                console.error('Erreur lors de la fin automatique du service:', err)
-                return
-            }
-            if(result.affectedRows > 0){
-                console.log(`Service terminé automatiquement pour l'utilisateur ${userId}`)
-            }
-        })
-    }, 2000)
-    pendingServiceEnds.set(userId, timeout)
-    res.sendStatus(204)
+    finishService(userId, (err, result)=>{
+        if(err){
+            console.error('Erreur lors de la fin automatique du service:', err)
+            return res.sendStatus(500)
+        }
+        if(result.affectedRows > 0){
+            console.log(`Service terminé automatiquement pour l'utilisateur ${userId}`)
+        }
+        res.sendStatus(204)
+    })
 })
 
 router.post("/end",auth,(req,res)=>{
     const userId = req.session.user.id
     console.log('POST /service/end - userId:', userId)
-    const pendingEnd = pendingServiceEnds.get(userId)
-    if(pendingEnd){
-        clearTimeout(pendingEnd)
-        pendingServiceEnds.delete(userId)
-    }
     finishService(userId, (err, result)=>{
         if(err) {
             console.error('DB error in end:', err)

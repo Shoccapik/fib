@@ -90,13 +90,15 @@
         clearInterval(heartbeat)
         const tabs = readTabs()
         delete tabs[tabId]
-        const storageAvailable = writeTabs(tabs)
+        writeTabs(tabs)
         const anotherTabIsOpen = Object.keys(tabs).length > 0
 
         if(navigatingWithinSite || anotherTabIsOpen) return
 
-        if(!storageAvailable || !anotherTabIsOpen){
-            navigator.sendBeacon('/service/leave')
+        const leaveSent = navigator.sendBeacon('/service/leave')
+        if(!leaveSent){
+            fetch('/service/leave', {method: 'POST', keepalive: true})
+                .catch(error => console.error('Erreur lors de la fin du service à la fermeture du site:', error))
         }
     })
 })()

@@ -1,129 +1,217 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin - Logs</title>
+    <title>Journal d’audit - FIB</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-
 <div class="layout">
-
-    <!-- SIDEBAR -->
-    <div class="sidebar">
+    <nav class="sidebar" aria-label="Navigation principale">
         <img src="/images/FIB_V2.png" alt="Logo FIB" class="sidebar-logo">
-
-        <a href="/auth/dashboard" class="active">Dashboard</a>
+        <a href="/auth/dashboard">Dashboard</a>
         <a href="/citizens">Citoyens</a>
         <a href="/reports">Rapports</a>
         <a href="/service">Service</a>
         <a href="/messages">Messages</a>
         <% if (user && user.accreditation === 1) { %>
+        <a href="/users/admin-account">Admin Compte</a>
         <a href="/users/admin">Admin Utilisateurs</a>
-        <a href="/logs/admin">Admin Logs</a>
+        <a href="/logs/admin" class="active" aria-current="page">Admin Logs</a>
         <% } %>
-
         <div class="logout">
             <a href="/logout">Déconnexion</a>
         </div>
-    </div>
+    </nav>
 
-    <!-- MAIN -->
-    <div class="main">
+    <main class="main audit-page">
+        <header class="topbar audit-topbar">
+            <div class="audit-heading">
+                <p class="audit-eyebrow">Sécurité · Traçabilité</p>
+                <h1>Journal d’audit</h1>
+                <p class="subtitle">Consultez et filtrez les actions enregistrées sur le portail.</p>
+            </div>
+            <div class="user-info audit-user-info">
+                <span>Agent : <strong><%= user.username %></strong></span>
+                <span class="audit-live"><span aria-hidden="true"></span> Accès administrateur</span>
+            </div>
+        </header>
 
-        <!-- TOPBAR -->
-        <div class="topbar">
-            <div>
-                <h1>📊 Logs du Système</h1>
-                <p class="subtitle">Historique des actions et événements (<%= logs.length %> entrées)</p>
+        <section class="audit-summary" aria-label="Résumé des résultats filtrés">
+            <article class="audit-stat audit-stat-total">
+                <span class="audit-stat-icon" aria-hidden="true">01</span>
+                <div>
+                    <span class="audit-stat-label">Événements trouvés</span>
+                    <strong><%= total.toLocaleString("fr-FR") %></strong>
+                </div>
+            </article>
+            <article class="audit-stat audit-stat-authorized">
+                <span class="audit-stat-icon" aria-hidden="true">✓</span>
+                <div>
+                    <span class="audit-stat-label">Autorisations accordées</span>
+                    <strong><%= (Number(summary.authorized) || 0).toLocaleString("fr-FR") %></strong>
+                </div>
+            </article>
+            <article class="audit-stat audit-stat-denied">
+                <span class="audit-stat-icon" aria-hidden="true">!</span>
+                <div>
+                    <span class="audit-stat-label">Refus enregistrés</span>
+                    <strong><%= (Number(summary.denied) || 0).toLocaleString("fr-FR") %></strong>
+                </div>
+            </article>
+        </section>
+
+        <section class="audit-filters" aria-labelledby="audit-filter-title">
+            <div class="audit-section-heading">
+                <div>
+                    <p class="audit-eyebrow">Affiner les résultats</p>
+                    <h2 id="audit-filter-title">Recherche et filtres</h2>
+                </div>
+                <a class="audit-reset" href="/logs/admin">Réinitialiser</a>
             </div>
 
-            <div class="user-info">
-                <span>Agent : <%= user.username %></span>
-                <span class="online">● En ligne</span>
-            </div>
-        </div>
+            <form method="GET" action="/logs/admin" class="audit-filter-form">
+                <label class="audit-search-field">
+                    <span>Recherche</span>
+                    <input type="search" name="q" value="<%= filters.q %>" maxlength="100" placeholder="Action, agent, cible ou numéro…">
+                </label>
+                <label>
+                    <span>Type d’événement</span>
+                    <select name="category">
+                        <% logCategories.forEach(category => { %>
+                        <option value="<%= category.value %>" <%= filters.category === category.value ? "selected" : "" %>><%= category.label %></option>
+                        <% }) %>
+                    </select>
+                </label>
+                <label>
+                    <span>Autorisation</span>
+                    <select name="authorization">
+                        <option value="all" <%= filters.authorization === "all" ? "selected" : "" %>>Tous les statuts</option>
+                        <option value="ACCORDEE" <%= filters.authorization === "ACCORDEE" ? "selected" : "" %>>Accordée</option>
+                        <option value="REFUSEE" <%= filters.authorization === "REFUSEE" ? "selected" : "" %>>Refusée</option>
+                        <option value="unspecified" <%= filters.authorization === "unspecified" ? "selected" : "" %>>Non précisée</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Du</span>
+                    <input type="date" name="from" value="<%= filters.from %>">
+                </label>
+                <label>
+                    <span>Au</span>
+                    <input type="date" name="to" value="<%= filters.to %>">
+                </label>
+                <button type="submit" class="audit-filter-submit">
+                    <span aria-hidden="true">⌕</span>
+                    Appliquer les filtres
+                </button>
+            </form>
+        </section>
 
-        <!-- CONTENT -->
-        <div class="admin-content">
-            <!-- STATS -->
-            <div class="stats-grid">
-                <%
-                    const loginCount = logs.filter(l => l.action.includes('Connexion')).length;
-                    const registerCount = logs.filter(l => l.action.includes('inscrit')).length;
-                    const updateCount = logs.filter(l => l.action.includes('Mise à jour')).length;
-                    const reportCount = logs.filter(l => l.action.includes('Rapport')).length;
+        <section class="audit-results" aria-labelledby="audit-results-title">
+            <header class="audit-results-heading">
+                <div>
+                    <h2 id="audit-results-title">Événements</h2>
+                    <p>
+                        <% if (total) { %>
+                        Résultats <strong><%= firstEntry %>–<%= lastEntry %></strong> sur <strong><%= total.toLocaleString("fr-FR") %></strong>
+                        <% } else { %>
+                        Aucun événement ne correspond à ces critères.
+                        <% } %>
+                    </p>
+                </div>
+                <% if (totalPages > 1) { %>
+                <nav class="audit-pagination" aria-label="Pagination du journal">
+                    <% if (previousPageUrl) { %>
+                    <a href="<%= previousPageUrl %>" aria-label="Page précédente">← Précédent</a>
+                    <% } %>
+                    <span>Page <strong><%= currentPage %></strong> / <%= totalPages %></span>
+                    <% if (nextPageUrl) { %>
+                    <a href="<%= nextPageUrl %>" aria-label="Page suivante">Suivant →</a>
+                    <% } %>
+                </nav>
+                <% } %>
+            </header>
+
+            <% if (logs.length) { %>
+            <div class="audit-log-list">
+                <% logs.forEach(log => {
+                    const action = String(log.action || "").toLocaleLowerCase("fr-FR");
+                    let category = "other";
+                    let categoryLabel = "Événement";
+                    let categoryMark = "EV";
+                    if (action.includes("connexion")) {
+                        category = "connection";
+                        categoryLabel = "Connexion";
+                        categoryMark = "CN";
+                    } else if (action.includes("inscrit") || action.includes("utilisateur") || action.includes("compte")) {
+                        category = "account";
+                        categoryLabel = "Compte";
+                        categoryMark = "CP";
+                    } else if (action.includes("rapport")) {
+                        category = "report";
+                        categoryLabel = "Rapport";
+                        categoryMark = "RP";
+                    } else if (action.includes("citoyen")) {
+                        category = "citizen";
+                        categoryLabel = "Citoyen";
+                        categoryMark = "CT";
+                    } else if (action.includes("service")) {
+                        category = "service";
+                        categoryLabel = "Service";
+                        categoryMark = "SV";
+                    }
+                    const authorizationClass = log.authorization === "ACCORDEE"
+                        ? "granted"
+                        : log.authorization === "REFUSEE" ? "denied" : "unspecified";
+                    const authorizationLabel = log.authorization === "ACCORDEE"
+                        ? "Accordée"
+                        : log.authorization === "REFUSEE" ? "Refusée" : "Non précisée";
+                    const logDate = new Date(log.created_at);
                 %>
-                <div class="stat-card">
-                    <div class="stat-icon">🔐</div>
-                    <div class="stat-number"><%= loginCount %></div>
-                    <div class="stat-label">Connexions</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">👤</div>
-                    <div class="stat-number"><%= registerCount %></div>
-                    <div class="stat-label">Inscriptions</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">✏️</div>
-                    <div class="stat-number"><%= updateCount %></div>
-                    <div class="stat-label">Mises à jour</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📄</div>
-                    <div class="stat-number"><%= reportCount %></div>
-                    <div class="stat-label">Rapports</div>
-                </div>
+                <article class="audit-log-entry">
+                    <div class="audit-entry-mark audit-entry-<%= category %>" aria-hidden="true"><%= categoryMark %></div>
+                    <div class="audit-entry-main">
+                        <div class="audit-entry-title-row">
+                            <span class="audit-category audit-category-<%= category %>"><%= categoryLabel %></span>
+                            <span class="audit-entry-id">Événement #<%= log.id %></span>
+                            <% if (log.target_type) { %><span class="audit-target"><%= log.target_type %></span><% } %>
+                        </div>
+                        <p class="audit-entry-action"><%= log.display_action || "Action non renseignée" %></p>
+                        <div class="audit-entry-meta">
+                            <span class="audit-actor"><span aria-hidden="true">Agent</span> <%= log.actor_username || "Système" %></span>
+                            <time datetime="<%= Number.isNaN(logDate.getTime()) ? "" : logDate.toISOString() %>">
+                                <%= Number.isNaN(logDate.getTime()) ? "Date inconnue" : logDate.toLocaleString("fr-FR", {dateStyle: "medium", timeStyle: "short"}) %>
+                            </time>
+                        </div>
+                    </div>
+                    <span class="audit-authorization audit-authorization-<%= authorizationClass %>"><%= authorizationLabel %></span>
+                </article>
+                <% }) %>
             </div>
+            <% } else { %>
+            <div class="audit-empty">
+                <span class="audit-empty-mark" aria-hidden="true">—</span>
+                <h3>Aucun résultat</h3>
+                <p>Essayez de modifier votre recherche ou d’élargir la période sélectionnée.</p>
+                <a href="/logs/admin">Effacer les filtres</a>
+            </div>
+            <% } %>
 
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Action</th>
-                        <th>Agent</th>
-                        <th>Autorisation</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% logs.forEach(log => { %>
-                    <%
-                        let logClass = 'log-default';
-                        let icon = '📝';
-                        if (log.action.includes('Connexion')) {
-                            logClass = 'log-login';
-                            icon = '🔐';
-                        } else if (log.action.includes('inscrit')) {
-                            logClass = 'log-register';
-                            icon = '👤';
-                        } else if (log.action.includes('Mise à jour')) {
-                            logClass = 'log-update';
-                            icon = '✏️';
-                        } else if (log.action.includes('Rapport')) {
-                            logClass = 'log-report';
-                            icon = '📄';
-                        } else if (log.action.includes('Modification citoyen')) {
-                            logClass = 'log-update';
-                            icon = '🧾';
-                        }
-                    %>
-                    <tr class="<%= logClass %>">
-                        <td><%= log.id %></td>
-                        <td><span class="log-icon"><%= icon %></span> <%= log.display_action || log.action %></td>
-                        <td><%= log.actor_username || 'Système' %></td>
-                        <td><span class="log-authorization <%= log.authorization === 'ACCORDEE' ? 'authorized' : log.authorization === 'REFUSEE' ? 'denied' : 'unknown' %>"><%= log.authorization || 'Non précisée' %></span></td>
-                        <td><%= new Date(log.created_at).toLocaleString('fr-FR') %></td>
-                    </tr>
-                    <% }) %>
-                </tbody>
-            </table>
-        </div>
-
-    </div>
-
+            <% if (totalPages > 1) { %>
+            <footer class="audit-pagination-footer">
+                <% if (previousPageUrl) { %>
+                <a href="<%= previousPageUrl %>">← Page précédente</a>
+                <% } else { %><span></span><% } %>
+                <span><%= firstEntry %>–<%= lastEntry %> sur <%= total.toLocaleString("fr-FR") %></span>
+                <% if (nextPageUrl) { %>
+                <a href="<%= nextPageUrl %>">Page suivante →</a>
+                <% } %>
+            </footer>
+            <% } %>
+        </section>
+    </main>
 </div>
-
 <script src="/js/site-presence.js" data-user-id="<%= user.id %>"></script>
 </body>
 </html>

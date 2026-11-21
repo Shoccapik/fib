@@ -56,7 +56,7 @@ Le projet fournit l'interface et la base de données du MDT. Il ne se connecte p
 | 📁 Dossiers groupes | Regrouper groupes, rapports et citoyens | `/groups` |
 | ⏱️ Service | Gérer la prise de service et les pauses | `/service` |
 | ✉️ Messages | Communiquer entre agents | `/messages` |
-| 🛡️ Administration | Gérer les accès et consulter les logs | `/users/admin`, `/logs/admin` |
+| 🛡️ Administration | Gérer les accès, les comptes et les logs | `/users/admin`, `/users/admin-account`, `/logs/admin` |
 
 ## ✨ Fonctionnalités
 
@@ -67,7 +67,7 @@ Le projet fournit l'interface et la base de données du MDT. Il ne se connecte p
 - Protection des pages internes par session.
 - Déconnexion de la session active.
 - Sessions conservées en base de données et prolongées de deux heures après chaque requête.
-- Fin automatique du service quand aucun onglet du site ne reste ouvert dans le navigateur.
+- Fin immédiate du service quand le dernier onglet du site est fermé.
 
 ### 📊 Tableau de bord
 
@@ -112,11 +112,11 @@ La messagerie fonctionne comme une boîte mail réservée aux agents :
 
 ### ⏱️ Prise de service
 
-Un agent peut démarrer son service, le mettre en pause, le reprendre et le terminer. Les durées sont enregistrées dans MySQL et utilisées dans le classement affiché sur le tableau de bord.
+Un agent peut démarrer son service, le mettre en pause, le reprendre et le terminer. La fermeture du dernier onglet du site termine immédiatement un service actif. Les durées et leurs corrections administratives sont enregistrées dans MySQL et utilisées dans le classement affiché sur le tableau de bord.
 
 ### 🛡️ Administration et logs
 
-Les agents disposant d'une accréditation suffisante peuvent gérer les grades et les niveaux d'accès des utilisateurs. Les connexions, inscriptions, modifications et créations de rapports sont enregistrées dans les logs du système.
+Les agents disposant d'une accréditation suffisante peuvent gérer les grades et les niveaux d'accès des utilisateurs. L'accréditation 1 donne également accès à `/users/admin-account`, qui permet de renommer les autres comptes et d'ajouter ou retirer du temps de service avec un motif obligatoire. Les corrections sont historisées et répercutées sur le tableau de bord et le classement. Les connexions, inscriptions, modifications et créations de rapports sont enregistrées dans les logs du système.
 
 ## 📁 Dossiers groupes
 
@@ -279,6 +279,7 @@ fib/
 - `/reports` : rapports opérationnels ;
 - `/groups` : dossiers groupes et informations de renseignement ;
 - `/service` : prise de service ;
+- `/users/admin-account` : gestion des comptes et corrections de temps (accréditation 1) ;
 - `/messages` : messagerie interne ;
 - `/users/admin` : administration des utilisateurs ;
 - `/logs/admin` : logs du système.
