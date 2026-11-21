@@ -393,12 +393,15 @@ router.post("/:id/update", auth, (req,res)=>{
     const reportId = req.params.id
     const { title, content, level, report_type, group_name, personnes_concernees, agents_concernes, vehicules, plaques, armes, numeros_serie } = req.body
 
+    if(typeof title !== "string" || !title.trim() || title.trim().length > 100){
+        return res.status(400).send("Le titre est obligatoire et ne peut pas dépasser 100 caractères")
+    }
     if(!isValidReportLevel(level)) return res.status(400).send("Le niveau du rapport doit être compris entre 1 et 4")
 
     db.query(`SELECT * FROM reports r WHERE r.id = ? AND ${reportAccessCondition()}`, [reportId, ...reportAccessParams(req.session.user)], (err, oldResults) => {
         if(err){
             console.error("Erreur SELECT report pour modification:", err)
-            return res.send("Erreur lors de la lecture du rapport")
+            return res.status(500).send("Erreur lors de la lecture du rapport")
         }
 
         if(oldResults.length === 0){
@@ -425,7 +428,7 @@ router.post("/:id/update", auth, (req,res)=>{
             { key: 'numeros_serie', label: 'Numéros de série' }
         ]
 
-        const newValues = { title, report_type: reportType, content, level, personnes_concernes, agents_concernes, vehicules, plaques, armes, numeros_serie }
+        const newValues = { title: title.trim(), report_type: reportType, content, level, personnes_concernees, agents_concernes, vehicules, plaques, armes, numeros_serie }
 
         diffFields.forEach(field => {
             const oldValue = String(oldReport[field.key] ?? '').trim()
@@ -437,14 +440,14 @@ router.post("/:id/update", auth, (req,res)=>{
 
         db.query(
             "UPDATE reports SET title = ?, content = ?, level = ?, report_type = ?, group_name = ?, personnes_concernees = ?, agents_concernes = ?, vehicules = ?, plaques = ?, armes = ?, numeros_serie = ? WHERE id = ?",
-            [title, content, level, reportType, group_name || null, personnes_concernees, agents_concernes, vehicules, plaques, armes, numeros_serie, reportId],
+            [title.trim(), content, level, reportType, typeof group_name === "string" && group_name.trim() ? group_name.trim() : null, personnes_concernees, agents_concernes, vehicules, plaques, armes, numeros_serie, reportId],
             (err)=>{
                 if(err){
                     console.error("Erreur UPDATE report:", err)
-                    return res.send("Erreur lors de la mise à jour du rapport")
+                    return res.status(500).send("Erreur lors de la mise à jour du rapport. Vérifiez la connexion et réessayez.")
                 }
 
-                logToWebhook(`✏️ Rapport modifié : ${title}`,'info',{ changes: changes.length ? changes : ['Aucune modification détectée'] })
+                logToWebhook(`✏️ Rapport modifié : ${title.trim()}`,'info',{ changes: changes.length ? changes : ['Aucune modification détectée'] })
                 res.redirect(`/reports/${reportId}`)
             }
         )

@@ -109,12 +109,50 @@
                 </div>
 
                 <div class="report-operational-fields">
-                    <input name="personnes_concernees" placeholder="Personnes concernées">
-                    <input name="agents_concernes" placeholder="Agents concernés">
-                    <input name="vehicules" placeholder="Véhicules utilisés">
-                    <input name="plaques" placeholder="Plaques des véhicules">
-                    <input name="armes" placeholder="Armes impliquées">
-                    <input name="numeros_serie" placeholder="Numéros de série">
+                    <label class="report-operational-field">
+                        <span>Personnes concernées</span>
+                        <input name="personnes_concernees" placeholder="Noms ou références">
+                    </label>
+                    <label class="report-operational-field">
+                        <span>Agents concernés</span>
+                        <input name="agents_concernes" placeholder="Noms ou matricules">
+                    </label>
+
+                    <section class="report-equipment-list" data-equipment-list
+                        data-primary-label="Véhicule"
+                        data-secondary-label="Plaque"
+                        data-primary-placeholder="Modèle ou description du véhicule"
+                        data-secondary-placeholder="Immatriculation">
+                        <div class="report-equipment-heading">
+                            <div>
+                                <h3>Véhicules</h3>
+                                <p>Associez chaque véhicule à sa plaque.</p>
+                            </div>
+                            <button class="report-equipment-add" type="button" data-add-equipment>+ Ajouter un véhicule</button>
+                        </div>
+                        <div class="report-equipment-rows" data-equipment-rows></div>
+                        <p class="report-equipment-empty" data-equipment-empty>Aucun véhicule ajouté.</p>
+                        <textarea hidden name="vehicules" data-primary-values></textarea>
+                        <textarea hidden name="plaques" data-secondary-values></textarea>
+                    </section>
+
+                    <section class="report-equipment-list" data-equipment-list
+                        data-primary-label="Arme"
+                        data-secondary-label="N° de série"
+                        data-primary-placeholder="Type ou description de l'arme"
+                        data-secondary-placeholder="Numéro de série">
+                        <div class="report-equipment-heading">
+                            <div>
+                                <h3>Armes</h3>
+                                <p>Associez chaque arme à son numéro de série.</p>
+                            </div>
+                            <button class="report-equipment-add" type="button" data-add-equipment>+ Ajouter une arme</button>
+                        </div>
+                        <div class="report-equipment-rows" data-equipment-rows></div>
+                        <p class="report-equipment-empty" data-equipment-empty>Aucune arme ajoutée.</p>
+                        <textarea hidden name="armes" data-primary-values></textarea>
+                        <textarea hidden name="numeros_serie" data-secondary-values></textarea>
+                    </section>
                 </div>
 
                 <button class="btn report-create-submit">Créer le rapport</button>
@@ -162,6 +200,9 @@
                         <span><b>Personnes</b> <%= report.personnes_concernees || '-'%></span>
                         <span><b>Agents</b> <%= report.agents_concernes || '-'%></span>
                         <span><b>Véhicules</b> <%= report.vehicules || '-'%></span>
+                        <span><b>Plaques</b> <%= report.plaques || '-'%></span>
+                        <span><b>Armes</b> <%= report.armes || '-'%></span>
+                        <span><b>N° série</b> <%= report.numeros_serie || '-'%></span>
                     </div>
 
                     
@@ -177,6 +218,7 @@
 </div>
 
 </body>
+<script src="/js/report-equipment.js"></script>
 <script>
     const reportType = document.querySelector('#report-type')
     const dossierFields = document.querySelector('.report-dossier-fields')
