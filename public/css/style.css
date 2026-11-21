@@ -5079,6 +5079,64 @@ body:not(.login-body) {
     }
 }
 
+.account-admin-delete {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 15px 22px;
+    border-top: 1px solid rgba(248, 113, 113, .16);
+    background: linear-gradient(100deg, rgba(127, 29, 29, .11), rgba(15, 23, 42, .5));
+}
+
+.account-admin-delete strong {
+    color: #fecaca;
+    font-size: 12px;
+}
+
+.account-admin-delete p {
+    margin-top: 4px;
+    color: #9a8792;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.account-admin-delete form {
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.account-admin-delete-button {
+    min-height: 38px;
+    padding: 8px 13px;
+    border: 1px solid rgba(248, 113, 113, .42);
+    border-radius: 7px;
+    background: rgba(127, 29, 29, .36);
+    color: #fecaca;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color .18s ease, border-color .18s ease;
+}
+
+.account-admin-delete-button:hover {
+    border-color: #ef4444;
+    background: #991b1b;
+    color: #fff;
+}
+
+@media (max-width: 560px) {
+    .account-admin-delete {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 15px 16px;
+    }
+
+    .account-admin-delete-button {
+        width: 100%;
+    }
+}
+
 /* ADMIN AUDIT LOG */
 .audit-page {
     width: 100%;

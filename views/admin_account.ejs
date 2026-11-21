@@ -42,7 +42,7 @@
             <span class="account-admin-intro-mark" aria-hidden="true">FIB</span>
             <div>
                 <strong>Gestion des comptes agents</strong>
-                <p>Les ajustements de service sont enregistrés avec leur motif. Votre propre compte n’est pas modifiable depuis cette page.</p>
+                <p>Les ajustements sont historisés. La suppression efface le compte, ses messages, rapports, dossiers, pointages et journaux associés. Votre compte et le dernier compte d’accréditation 1 sont protégés; la suppression elle-même reste tracée.</p>
             </div>
         </section>
 
@@ -57,7 +57,7 @@
             <% accounts.forEach(account => { %>
             <article class="account-admin-card">
                 <header class="account-admin-card-heading">
-                    <span class="account-admin-avatar"><%= account.username.charAt(0).toUpperCase() %></span>
+                    <span class="account-admin-avatar"><%= String(account.username || '').charAt(0).toUpperCase() || '?' %></span>
                     <div class="account-admin-identity">
                         <p>Compte #<%= account.id %></p>
                         <h2><%= account.username %></h2>
@@ -109,6 +109,16 @@
                             <input name="reason" maxlength="255" placeholder="Ex. Correction d’un oubli de fin de service" required>
                         </label>
                         <button type="submit" class="account-admin-primary-button">Appliquer la correction</button>
+                    </form>
+                </div>
+
+                <div class="account-admin-delete">
+                    <div>
+                        <strong>Suppression définitive</strong>
+                        <p>Les données et historiques liés à ce compte ne pourront pas être récupérés.</p>
+                    </div>
+                    <form method="POST" action="/users/admin-account/<%= account.id %>/delete" onsubmit="return confirm('Confirmer la suppression définitive du compte et de toutes ses données associées ?');">
+                        <button type="submit" class="account-admin-delete-button">Supprimer le compte</button>
                     </form>
                 </div>
             </article>

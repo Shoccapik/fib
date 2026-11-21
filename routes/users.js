@@ -198,11 +198,15 @@ router.get("/admin-account", isLevelOne, (req,res)=>{
     const notices = {
         "username-updated": {type: "success", text: "Le nom du compte a été mis à jour."},
         "time-updated": {type: "success", text: "Le temps de service a été ajusté."},
+        "account-deleted": {type: "success", text: "Le compte et ses données associées ont été supprimés."},
         "username-taken": {type: "error", text: "Ce nom de compte est déjà utilisé."},
         "invalid-username": {type: "error", text: "Saisissez un nom de compte de 1 à 50 caractères."},
         "invalid-time": {type: "error", text: "Indiquez une durée valide et un motif."},
         "insufficient-time": {type: "error", text: "La durée à retirer dépasse le temps de service enregistré."},
-        "account-not-found": {type: "error", text: "Le compte sélectionné est introuvable."}
+        "account-not-found": {type: "error", text: "Le compte sélectionné est introuvable."},
+        "last-admin": {type: "error", text: "Le dernier compte d’accréditation 1 ne peut pas être supprimé."},
+        "duplicate-username": {type: "error", text: "Un autre compte partage ce nom. Renommez-le avant la suppression pour protéger ses messages."},
+        "missing-username": {type: "error", text: "Attribuez d’abord un nom au compte pour supprimer correctement ses données associées."}
     }
 
     db.query(
@@ -343,6 +347,140 @@ router.post("/admin-account/:userId/service-time", isLevelOne, (req,res)=>{
             `Temps de service ${direction === "add" ? "ajouté" : "retiré"} pour l'utilisateur #${targetId}: ${hours}h ${minutes}min. Motif: ${reason}`
         )
         res.redirect("/users/admin-account?notice=time-updated")
+    })
+})
+
+router.post("/admin-account/:userId/delete", isLevelOne, (req,res)=>{
+    const targetId = Number(req.params.userId)
+    if(!Number.isSafeInteger(targetId) || targetId <= 0 || targetId === Number(req.session.user.id)){
+        return res.status(400).send("Compte cible invalide")
+    }
+
+    let deletedUsername = ""
+    withTransaction((connection, done)=>{
+        connection.query(
+            "SELECT id, username, accreditation FROM users ORDER BY id FOR UPDATE",
+            (usersErr, users)=>{
+                if(usersErr) return done(usersErr)
+                const target = users.find(account=>Number(account.id) === targetId)
+                if(!target) return done(accountError("account-not-found", 404))
+
+                if(typeof target.username !== "string" || !target.username.trim()){
+                    return done(accountError("missing-username", 400))
+                }
+
+                deletedUsername = target.username
+                const normalizedUsername = deletedUsername.toLocaleLowerCase("fr-FR")
+                const duplicateUsername = users.filter(account=>
+                    typeof account.username === "string" &&
+                    account.username.toLocaleLowerCase("fr-FR") === normalizedUsername
+                )
+                if(duplicateUsername.length > 1){
+                    return done(accountError("duplicate-username", 409))
+                }
+
+                const remainingLevelOne = users.filter(account=>
+                    Number(account.accreditation) === 1 && Number(account.id) !== targetId
+                )
+                if(Number(target.accreditation) === 1 && remainingLevelOne.length === 0){
+                    return done(accountError("last-admin", 409))
+                }
+
+                connection.query("SELECT id FROM groups WHERE created_by = ? FOR UPDATE", [targetId], groupsErr=>{
+                    if(groupsErr) return done(groupsErr)
+
+                    connection.query(
+                        `DELETE FROM app_sessions
+                         WHERE CASE
+                            WHEN JSON_VALID(data) THEN JSON_UNQUOTE(JSON_EXTRACT(data, '$.user.id'))
+                            ELSE NULL
+                         END = ?`,
+                        [String(targetId)],
+                        sessionsErr=>{
+                            if(sessionsErr) return done(sessionsErr)
+
+                            connection.query(
+                                `DELETE FROM reports
+                                 WHERE agent_id = ?
+                                    OR group_id IN (SELECT id FROM groups WHERE created_by = ?)
+                                    OR group_name IN (SELECT name FROM groups WHERE created_by = ?)`,
+                                [targetId, targetId, targetId],
+                                reportsErr=>{
+                                    if(reportsErr) return done(reportsErr)
+
+                                    connection.query("DELETE FROM groups WHERE created_by = ?", [targetId], groupsDeleteErr=>{
+                                        if(groupsDeleteErr) return done(groupsDeleteErr)
+
+                                        connection.query(
+                                            "DELETE FROM messages WHERE sender = ? OR receiver = ?",
+                                            [deletedUsername, deletedUsername],
+                                            messagesErr=>{
+                                                if(messagesErr) return done(messagesErr)
+
+                                                connection.query("DELETE FROM service_logs WHERE user_id = ?", [targetId], serviceErr=>{
+                                                    if(serviceErr) return done(serviceErr)
+
+                                                    connection.query(
+                                                        "DELETE FROM service_time_adjustments WHERE user_id = ? OR actor_id = ?",
+                                                        [targetId, targetId],
+                                                        adjustmentsErr=>{
+                                                            if(adjustmentsErr) return done(adjustmentsErr)
+
+                                                            connection.query(
+                                                                `DELETE FROM logs
+                                                                 WHERE actor_username = ?
+                                                                    OR target_type = ?
+                                                                    OR action = CONCAT('Connexion de l''utilisateur: ', ?)
+                                                                    OR LOCATE(CONCAT('Nouvel utilisateur inscrit: ', ?, ' ('), action) = 1
+                                                                    OR LOCATE(CONCAT('Mise à jour utilisateur ID ', ?, ':'), action) = 1`,
+                                                                [
+                                                                    deletedUsername,
+                                                                    `Compte #${targetId}`,
+                                                                    deletedUsername,
+                                                                    deletedUsername,
+                                                                    targetId
+                                                                ],
+                                                                logsErr=>{
+                                                                    if(logsErr) return done(logsErr)
+
+                                                                    connection.query("DELETE FROM users WHERE id = ?", [targetId], (deleteErr, result)=>{
+                                                                        if(deleteErr) return done(deleteErr)
+                                                                        if(!result.affectedRows) return done(accountError("account-not-found", 404))
+                                                                        done()
+                                                                    })
+                                                                }
+                                                            )
+                                                        }
+                                                    )
+                                                })
+                                            }
+                                        )
+                                    })
+                                }
+                            )
+                        }
+                    )
+                })
+            }
+        )
+    }, err=>{
+        if(err){
+            if(["account-not-found", "last-admin", "duplicate-username", "missing-username"].includes(err.message)){
+                return res.redirect(`/users/admin-account?notice=${err.message}`)
+            }
+            console.error("Erreur lors de la suppression du compte et de ses données:", err)
+            return res.status(500).send("Erreur lors de la suppression du compte")
+        }
+
+        writeAccountLog(
+            req.session.user,
+            targetId,
+            `Compte supprimé avec ses données associées: ${deletedUsername}`,
+            logErr=>{
+                if(logErr) return res.status(500).send("Compte supprimé, mais la suppression n’a pas pu être inscrite dans les journaux.")
+                res.redirect("/users/admin-account?notice=account-deleted")
+            }
+        )
     })
 })
 
