@@ -14,6 +14,17 @@ const gradeOptions = [
     "Special Agent",
     "Probation Agent"
 ]
+const gradeAccreditations = {
+    "Director": 1,
+    "Deputy Director": 1,
+    "Associate Deputy Director": 1,
+    "Special Agent In Charge": 2,
+    "Assistant Special Agent In Charge": 2,
+    "Deputy Special Agent In Charge": 2,
+    "Supervisory Special Agent": 2,
+    "Special Agent": 3,
+    "Probation Agent": 4
+}
 
 function isLevelOne(req, res, next){
     if(!req.session.user || Number(req.session.user.accreditation) !== 1){
@@ -199,6 +210,9 @@ router.get("/admin-account", isLevelOne, (req,res)=>{
         "username-updated": {type: "success", text: "Le nom du compte a été mis à jour."},
         "time-updated": {type: "success", text: "Le temps de service a été ajusté."},
         "account-deleted": {type: "success", text: "Le compte et ses données associées ont été supprimés."},
+        "registration-approved": {type: "success", text: "La demande de compte a été approuvée. Le nouvel agent peut maintenant se connecter."},
+        "registration-rejected": {type: "success", text: "La demande de compte a été refusée."},
+        "registration-name-taken": {type: "error", text: "Ce nom d’utilisateur est déjà attribué à un compte actif. La demande reste en attente."},
         "username-taken": {type: "error", text: "Ce nom de compte est déjà utilisé."},
         "invalid-username": {type: "error", text: "Saisissez un nom de compte de 1 à 50 caractères."},
         "invalid-time": {type: "error", text: "Indiquez une durée valide et un motif."},
@@ -206,7 +220,8 @@ router.get("/admin-account", isLevelOne, (req,res)=>{
         "account-not-found": {type: "error", text: "Le compte sélectionné est introuvable."},
         "last-admin": {type: "error", text: "Le dernier compte d’accréditation 1 ne peut pas être supprimé."},
         "duplicate-username": {type: "error", text: "Un autre compte partage ce nom. Renommez-le avant la suppression pour protéger ses messages."},
-        "missing-username": {type: "error", text: "Attribuez d’abord un nom au compte pour supprimer correctement ses données associées."}
+        "missing-username": {type: "error", text: "Attribuez d’abord un nom au compte pour supprimer correctement ses données associées."},
+        "registration-not-found": {type: "error", text: "Cette demande n’existe plus ou a déjà été traitée."}
     }
 
     db.query(
@@ -231,10 +246,135 @@ router.get("/admin-account", isLevelOne, (req,res)=>{
                 ...account,
                 serviceDuration: formatSeconds(account.totalSeconds)
             }))
-            const notice = notices[req.query.notice] || null
-            res.render("admin_account", {accounts, notice, user: req.session.user})
+            db.query(
+                "SELECT id, username, grade_title, accreditation, created_at FROM pending_users ORDER BY created_at ASC, id ASC",
+                (pendingErr, pendingAccounts)=>{
+                    if(pendingErr){
+                        console.error("Erreur lors de la lecture des demandes d'inscription:", pendingErr)
+                        return res.status(500).send("Erreur lors de la lecture des demandes d'inscription")
+                    }
+                    const noticeKey = typeof req.query.notice === "string" ? req.query.notice : ""
+                    const notice = notices[noticeKey] || null
+                    res.render("admin_account", {
+                        accounts,
+                        pendingAccounts: pendingAccounts || [],
+                        notice,
+                        user: req.session.user
+                    })
+                }
+            )
         }
     )
+})
+
+router.post("/admin-account/registrations/:requestId/approve", isLevelOne, (req,res)=>{
+    const requestId = Number(req.params.requestId)
+    if(!Number.isSafeInteger(requestId) || requestId <= 0){
+        return res.status(400).send("Demande de compte invalide")
+    }
+
+    withTransaction((connection, done)=>{
+        connection.query(
+            "SELECT id, username, password, grade, accreditation, grade_title FROM pending_users WHERE id = ? FOR UPDATE",
+            [requestId],
+            (requestErr, requests)=>{
+                if(requestErr) return done(requestErr)
+                if(!requests.length) return done(accountError("registration-not-found", 404))
+                const request = requests[0]
+                if(!gradeOptions.includes(request.grade_title) ||
+                    Number(request.accreditation) !== gradeAccreditations[request.grade_title]){
+                    return done(new Error("Invalid pending registration grade"))
+                }
+
+                connection.query("SELECT id FROM users WHERE username = ? LIMIT 1 FOR UPDATE", [request.username], (userErr, users)=>{
+                    if(userErr) return done(userErr)
+                    if(users.length) return done(accountError("registration-name-taken", 409))
+
+                    connection.query(
+                        "INSERT INTO users (username, password, grade, accreditation, grade_title) VALUES (?, ?, ?, ?, ?)",
+                        [request.username, request.password, request.grade || "user", request.accreditation, request.grade_title],
+                        (insertErr)=>{
+                            if(insertErr) return done(insertErr)
+                            const target = `Inscription #${requestId}`
+                            connection.query(
+                                "UPDATE logs SET action = CONCAT(action, ' — approuvée'), actor_username = ?, authorization = 'ACCORDEE' WHERE target_type = ? AND authorization = 'EN ATTENTE'",
+                                [req.session.user.username, target],
+                                (logUpdateErr, logResult)=>{
+                                    if(logUpdateErr) return done(logUpdateErr)
+                                    const deleteRequest = logResult.affectedRows
+                                        ? callback=>connection.query("DELETE FROM pending_users WHERE id = ?", [requestId], callback)
+                                        : callback=>connection.query(
+                                            "INSERT INTO logs (action, actor_username, authorization, target_type) VALUES (?, ?, ?, ?)",
+                                            [`Demande de compte approuvée: ${request.username}`, req.session.user.username, "ACCORDEE", target],
+                                            logInsertErr=>{
+                                                if(logInsertErr) return callback(logInsertErr)
+                                                connection.query("DELETE FROM pending_users WHERE id = ?", [requestId], callback)
+                                            }
+                                        )
+                                    deleteRequest(done)
+                                }
+                            )
+                        }
+                    )
+                })
+            }
+        )
+    }, err=>{
+        if(err){
+            if(err.message === "registration-not-found") return res.redirect("/users/admin-account?notice=registration-not-found")
+            if(err.message === "registration-name-taken") return res.redirect("/users/admin-account?notice=registration-name-taken")
+            console.error("Erreur lors de l'approbation de la demande de compte:", err)
+            return res.status(500).send("Erreur lors de l'approbation de la demande")
+        }
+        res.redirect("/users/admin-account?notice=registration-approved")
+    })
+})
+
+router.post("/admin-account/registrations/:requestId/reject", isLevelOne, (req,res)=>{
+    const requestId = Number(req.params.requestId)
+    if(!Number.isSafeInteger(requestId) || requestId <= 0){
+        return res.status(400).send("Demande de compte invalide")
+    }
+
+    withTransaction((connection, done)=>{
+        connection.query(
+            "SELECT id, username FROM pending_users WHERE id = ? FOR UPDATE",
+            [requestId],
+            (requestErr, requests)=>{
+                if(requestErr) return done(requestErr)
+                if(!requests.length) return done(accountError("registration-not-found", 404))
+                const request = requests[0]
+                const target = `Inscription #${requestId}`
+
+                connection.query(
+                    "UPDATE logs SET action = CONCAT(action, ' — refusée'), actor_username = ?, authorization = 'REFUSEE' WHERE target_type = ? AND authorization = 'EN ATTENTE'",
+                    [req.session.user.username, target],
+                    (logUpdateErr, logResult)=>{
+                        if(logUpdateErr) return done(logUpdateErr)
+                        if(logResult.affectedRows){
+                            return connection.query("DELETE FROM pending_users WHERE id = ?", [requestId], done)
+                        }
+
+                        connection.query(
+                            "INSERT INTO logs (action, actor_username, authorization, target_type) VALUES (?, ?, ?, ?)",
+                            [`Demande de compte refusée: ${request.username}`, req.session.user.username, "REFUSEE", target],
+                            logInsertErr=>{
+                                if(logInsertErr) return done(logInsertErr)
+                                connection.query("DELETE FROM pending_users WHERE id = ?", [requestId], done)
+                            }
+                        )
+                    }
+                )
+            }
+        )
+    }, err=>{
+        if(err){
+            if(err.message === "registration-not-found") return res.redirect("/users/admin-account?notice=registration-not-found")
+            console.error("Erreur lors du refus de la demande de compte:", err)
+            return res.status(500).send("Erreur lors du refus de la demande")
+        }
+        res.redirect("/users/admin-account?notice=registration-rejected")
+    })
 })
 
 router.post("/admin-account/:userId/name", isLevelOne, (req,res)=>{

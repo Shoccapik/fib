@@ -63,7 +63,7 @@ Le projet fournit l'interface et la base de données du MDT. Il ne se connecte p
 ### 🔐 Authentification
 
 - Connexion des agents avec identifiant et mot de passe.
-- Inscription avec grade et niveau d'accréditation.
+- Demande d'inscription avec grade et niveau d'accréditation, activée après validation par un membre d'accréditation 1 dans Admin Compte.
 - Protection des pages internes par session.
 - Déconnexion de la session active.
 - Sessions conservées en base de données et prolongées de deux heures après chaque requête.
@@ -116,7 +116,7 @@ Un agent peut démarrer son service, le mettre en pause, le reprendre et le term
 
 ### 🛡️ Administration et logs
 
-Les agents disposant d'une accréditation suffisante peuvent gérer les grades et les niveaux d'accès des utilisateurs. L'accréditation 1 donne également accès à `/users/admin-account`, qui permet de renommer les autres comptes, d'ajouter ou retirer du temps de service avec un motif obligatoire, et de supprimer un compte. La suppression retire ses sessions, messages, rapports et dossiers associés, historiques de service, ajustements et journaux liés; une trace de l'opération est conservée. Le compte connecté et le dernier compte d'accréditation 1 ne peuvent pas être supprimés. Les corrections de temps sont historisées et répercutées sur le tableau de bord et le classement.
+Les agents disposant d'une accréditation suffisante peuvent gérer les grades et les niveaux d'accès des utilisateurs. L'accréditation 1 donne également accès à `/users/admin-account`, qui permet de valider ou refuser les demandes d'inscription, renommer les autres comptes, ajouter ou retirer du temps de service avec un motif obligatoire et supprimer un compte. Les comptes en attente ne peuvent pas se connecter. La suppression retire les sessions, messages, rapports et dossiers associés, historiques de service, ajustements et journaux liés; une trace de l'opération est conservée. Le compte connecté et le dernier compte d'accréditation 1 ne peuvent pas être supprimés. Les corrections de temps sont historisées et répercutées sur le tableau de bord et le classement.
 
 ## 📁 Dossiers groupes
 

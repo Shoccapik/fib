@@ -4,6 +4,50 @@ const db = require("../config/database")
 const bcrypt = require("bcrypt")
 const {reportAccessCondition, reportAccessParams} = require("../utils/reportAccess")
 
+const gradeLevels = {
+    "Director": 1,
+    "Deputy Director": 1,
+    "Associate Deputy Director": 1,
+    "Special Agent In Charge": 2,
+    "Assistant Special Agent In Charge": 2,
+    "Deputy Special Agent In Charge": 2,
+    "Supervisory Special Agent": 2,
+    "Special Agent": 3,
+    "Probation Agent": 4
+}
+
+function withTransaction(work, done){
+    db.getConnection((connectionErr, connection)=>{
+        if(connectionErr) return done(connectionErr)
+        connection.beginTransaction(beginErr=>{
+            if(beginErr){
+                connection.release()
+                return done(beginErr)
+            }
+            work(connection, transactionErr=>{
+                if(transactionErr){
+                    return connection.rollback(rollbackErr=>{
+                        if(rollbackErr) console.error("Erreur lors de l'annulation de la demande d'inscription:", rollbackErr)
+                        connection.release()
+                        done(transactionErr)
+                    })
+                }
+                connection.commit(commitErr=>{
+                    if(commitErr){
+                        return connection.rollback(rollbackErr=>{
+                            if(rollbackErr) console.error("Erreur lors de l'annulation de la demande d'inscription:", rollbackErr)
+                            connection.release()
+                            done(commitErr)
+                        })
+                    }
+                    connection.release()
+                    done()
+                })
+            })
+        })
+    })
+}
+
 router.get("/", (req,res)=>{
     res.render("login")
 })
@@ -15,7 +59,15 @@ router.post("/login", (req,res)=>{
     db.query("SELECT * FROM users WHERE username = ?",[username], async (err,results)=>{
         if(err) return res.send("Erreur de base de données")
 
-        if(results.length == 0) return res.send("Utilisateur introuvable")
+        if(results.length == 0){
+            return db.query("SELECT id FROM pending_users WHERE username = ? LIMIT 1", [username], (pendingErr, pendingRows)=>{
+                if(pendingErr) return res.status(500).send("Erreur de base de données")
+                if(pendingRows.length){
+                    return res.status(403).send("Votre demande de compte est en attente de validation par un administrateur de niveau 1.")
+                }
+                res.status(401).send("Utilisateur introuvable")
+            })
+        }
 
         const user = results[0]
 
@@ -41,37 +93,60 @@ router.post("/login", (req,res)=>{
 })
 
 router.get("/register", (req,res)=>{
-    res.render("register")
+    const registrationMessages = {
+        pending: {type: "success", text: "Votre demande a bien été envoyée. Vous pourrez vous connecter après validation par un membre d’accréditation 1."},
+        "invalid-details": {type: "error", text: "Vérifiez votre nom, votre mot de passe et le grade sélectionné."},
+        "username-taken": {type: "error", text: "Ce nom d’utilisateur est déjà utilisé ou fait l’objet d’une demande."}
+    }
+    res.render("register", {notice: registrationMessages[req.query.status] || null})
 })
 
 router.post("/register", async (req,res)=>{
-    const {username, password, grade_title} = req.body
+    const username = typeof req.body.username === "string" ? req.body.username.trim() : ""
+    const password = typeof req.body.password === "string" ? req.body.password : ""
+    const gradeTitle = typeof req.body.grade_title === "string" ? req.body.grade_title : ""
+    const accreditation = gradeLevels[gradeTitle]
 
-    const gradeLevels = {
-        "Director": 1,
-        "Deputy Director": 1,
-        "Associate Deputy Director": 1,
-        "Special Agent In Charge": 2,
-        "Assistant Special Agent In Charge": 2,
-        "Deputy Special Agent In Charge": 2,
-        "Supervisory Special Agent": 2,
-        "Special Agent": 3,
-        "Probation Agent": 4
+    if(!username || username.length > 50 || /[\u0000-\u001f]/.test(username) ||
+        Buffer.byteLength(password, "utf8") < 6 || Buffer.byteLength(password, "utf8") > 72 ||
+        !accreditation){
+        return res.redirect("/auth/register?status=invalid-details")
     }
 
-    const accreditation = gradeLevels[grade_title] || 4 // default to 4 if invalid
+    let hashedPassword
+    try {
+        hashedPassword = await bcrypt.hash(password, 10)
+    } catch(hashErr) {
+        console.error("Erreur lors du chiffrement du mot de passe d'inscription:", hashErr)
+        return res.status(500).send("Erreur lors de la création de la demande")
+    }
 
-    const hashedPassword = await bcrypt.hash(password, 10)
+    withTransaction((connection, done)=>{
+        connection.query("SELECT id FROM users WHERE username = ? LIMIT 1 FOR UPDATE", [username], (userErr, users)=>{
+            if(userErr) return done(userErr)
+            if(users.length) return done(Object.assign(new Error("username-taken"), {status: 409}))
 
-    db.query("INSERT INTO users (username, password, grade, accreditation, grade_title) VALUES (?, ?, 'user', ?, ?)", [username, hashedPassword, accreditation, grade_title], (err)=>{
-        if(err) return res.send("Erreur lors de l'inscription")
-
-        // Log the registration
-        db.query("INSERT INTO logs (action) VALUES (?)", [`Nouvel utilisateur inscrit: ${username} (${grade_title})`], (logErr)=>{
-            if(logErr) console.error("Erreur log:", logErr)
+            connection.query("INSERT INTO pending_users (username, password, grade, accreditation, grade_title) VALUES (?, ?, 'user', ?, ?)",
+                [username, hashedPassword, accreditation, gradeTitle],
+                (insertErr, result)=>{
+                    if(insertErr) return done(insertErr)
+                    connection.query(
+                        "INSERT INTO logs (action, actor_username, authorization, target_type) VALUES (?, ?, ?, ?)",
+                        [`Demande de création de compte: ${username} (${gradeTitle})`, username, "EN ATTENTE", `Inscription #${result.insertId}`],
+                        done
+                    )
+                }
+            )
         })
-
-        res.redirect("/")
+    }, err=>{
+        if(err){
+            if(err.message === "username-taken" || err.code === "ER_DUP_ENTRY"){
+                return res.redirect("/auth/register?status=username-taken")
+            }
+            console.error("Erreur lors de la création de la demande de compte:", err)
+            return res.status(500).send("Erreur lors de l'inscription")
+        }
+        res.redirect("/auth/register?status=pending")
     })
 })
 

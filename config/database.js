@@ -64,6 +64,21 @@ function ensureServiceTimeAdjustmentsTable(done){
     )
 }
 
+function ensurePendingUsersTable(done){
+    db.query(
+        `CREATE TABLE IF NOT EXISTS pending_users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(50) NOT NULL UNIQUE,
+            password TEXT NOT NULL,
+            grade VARCHAR(50),
+            accreditation INT NOT NULL,
+            grade_title VARCHAR(50),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        done
+    )
+}
+
 db.ready = new Promise((resolve, reject)=>{
     let index = 0
     const next = (migrationErr) => {
@@ -79,7 +94,10 @@ db.ready = new Promise((resolve, reject)=>{
     }
     ensureSessionTable(sessionErr=>{
         if(sessionErr) return next(sessionErr)
-        ensureServiceTimeAdjustmentsTable(next)
+        ensureServiceTimeAdjustmentsTable(adjustmentsErr=>{
+            if(adjustmentsErr) return next(adjustmentsErr)
+            ensurePendingUsersTable(next)
+        })
     })
 })
 

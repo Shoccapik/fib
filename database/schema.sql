@@ -9,6 +9,16 @@ grade VARCHAR(50),
 accreditation INT
 );
 
+CREATE TABLE IF NOT EXISTS pending_users(
+id INT AUTO_INCREMENT PRIMARY KEY,
+username VARCHAR(50) NOT NULL UNIQUE,
+password TEXT NOT NULL,
+grade VARCHAR(50),
+accreditation INT NOT NULL,
+grade_title VARCHAR(50),
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 INSERT INTO users (username, password, grade, accreditation)
 VALUES ("admin", "$2b$10$lcHzAI.qj89xvofR1.s4VO433/DlyKXUgIhv4Q5kHhHqIZVKfA.72", "user", 1);
 

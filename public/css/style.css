@@ -4728,6 +4728,19 @@ body:not(.login-body) {
     font-weight: 700;
 }
 
+.account-admin-counts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.account-admin-pending-count {
+    border-color: rgba(251, 191, 36, .35);
+    background: rgba(217, 119, 6, .12);
+    color: #fcd34d;
+}
+
 .account-admin-notice {
     max-width: 1240px;
     margin: -12px 0 20px;
@@ -5028,6 +5041,187 @@ body:not(.login-body) {
     font-size: 12px;
 }
 
+.account-admin-requests {
+    max-width: 1240px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    border: 1px solid #334b75;
+    border-radius: 13px;
+    background: rgba(15, 23, 42, .92);
+    box-shadow: 0 18px 42px rgba(0, 0, 0, .17);
+}
+
+.account-admin-requests-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 20px;
+    border-bottom: 1px solid #263147;
+    background: linear-gradient(100deg, rgba(37, 99, 235, .12), transparent 70%);
+}
+
+.account-admin-request-kicker {
+    margin-bottom: 5px;
+    color: #7daeff;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.account-admin-requests-heading h2 {
+    color: #f1f5f9;
+    font-size: 16px;
+}
+
+.account-admin-requests-heading > div > p:last-child {
+    margin-top: 5px;
+    color: #8190aa;
+    font-size: 11px;
+}
+
+.account-admin-request-badge {
+    flex: 0 0 auto;
+    padding: 7px 10px;
+    border: 1px solid rgba(251, 191, 36, .3);
+    border-radius: 999px;
+    background: rgba(217, 119, 6, .12);
+    color: #fcd34d;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.account-admin-requests-empty {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 20px;
+    color: #94a3b8;
+    font-size: 11px;
+}
+
+.account-admin-requests-empty > span {
+    display: grid;
+    width: 27px;
+    height: 27px;
+    place-items: center;
+    border: 1px solid rgba(52, 211, 153, .3);
+    border-radius: 9px;
+    background: rgba(16, 185, 129, .1);
+    color: #6ee7b7;
+    font-weight: 800;
+}
+
+.account-admin-request-list {
+    display: grid;
+    gap: 9px;
+    padding: 12px;
+}
+
+.account-admin-request-card {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 13px;
+    min-width: 0;
+    padding: 13px 15px;
+    border: 1px solid #25334c;
+    border-radius: 10px;
+    background: rgba(10, 17, 31, .75);
+}
+
+.account-admin-request-avatar {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    border: 1px solid #334b75;
+    border-radius: 12px;
+    background: rgba(37, 99, 235, .12);
+    color: #bfdbfe;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.account-admin-request-identity {
+    min-width: 0;
+}
+
+.account-admin-request-identity > span {
+    color: #71819b;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+}
+
+.account-admin-request-identity h3 {
+    overflow-wrap: anywhere;
+    margin: 3px 0;
+    color: #f1f5f9;
+    font-size: 14px;
+}
+
+.account-admin-request-identity p,
+.account-admin-request-identity time {
+    display: block;
+    color: #94a3b8;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.account-admin-request-identity time {
+    margin-top: 3px;
+    color: #71819b;
+}
+
+.account-admin-request-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.account-admin-request-actions form {
+    margin: 0;
+}
+
+.account-admin-approve-button,
+.account-admin-reject-button {
+    min-height: 36px;
+    padding: 8px 12px;
+    border: 1px solid;
+    border-radius: 7px;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color .18s ease, border-color .18s ease;
+}
+
+.account-admin-approve-button {
+    border-color: rgba(52, 211, 153, .38);
+    background: rgba(5, 150, 105, .2);
+    color: #a7f3d0;
+}
+
+.account-admin-approve-button:hover {
+    border-color: #34d399;
+    background: #047857;
+    color: #fff;
+}
+
+.account-admin-reject-button {
+    border-color: rgba(248, 113, 113, .32);
+    background: rgba(127, 29, 29, .2);
+    color: #fecaca;
+}
+
+.account-admin-reject-button:hover {
+    border-color: #ef4444;
+    background: #991b1b;
+    color: #fff;
+}
+
 @media (max-width: 820px) {
     .account-admin-forms {
         grid-template-columns: minmax(0, 1fr);
@@ -5040,6 +5234,45 @@ body:not(.login-body) {
 }
 
 @media (max-width: 560px) {
+    .account-admin-topbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .account-admin-counts {
+        justify-content: flex-start;
+    }
+
+    .account-admin-requests-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 16px;
+    }
+
+    .account-admin-request-card {
+        grid-template-columns: 36px minmax(0, 1fr);
+        align-items: start;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .account-admin-request-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        font-size: 13px;
+    }
+
+    .account-admin-request-actions {
+        grid-column: 2;
+        flex-wrap: wrap;
+    }
+
+    .account-admin-approve-button,
+    .account-admin-reject-button {
+        min-width: 100px;
+    }
+
     .account-admin-card-heading {
         align-items: flex-start;
         flex-wrap: wrap;
@@ -6406,4 +6639,33 @@ body:not(.login-body) {
     .users-admin-level {
         margin-left: 53px;
     }
+}
+
+.register-feedback {
+    margin: -8px 0 18px;
+    padding: 11px 12px;
+    border: 1px solid;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    text-align: left;
+}
+
+.register-feedback-success {
+    border-color: rgba(52, 211, 153, .35);
+    background: rgba(16, 185, 129, .1);
+    color: #a7f3d0;
+}
+
+.register-feedback-error {
+    border-color: rgba(248, 113, 113, .35);
+    background: rgba(239, 68, 68, .1);
+    color: #fecaca;
+}
+
+.register-approval-note {
+    margin-top: 15px;
+    color: #94a3b8;
+    font-size: 11px;
+    line-height: 1.6;
 }

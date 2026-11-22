@@ -29,14 +29,61 @@
             <div>
                 <p class="page-kicker">Administration · Accréditation 1</p>
                 <h1>Admin Compte</h1>
-                <p class="subtitle">Gérez le nom des comptes et corrigez le temps de service des autres agents.</p>
+                <p class="subtitle">Validez les nouvelles inscriptions, gérez les comptes et corrigez le temps de service.</p>
             </div>
-            <span class="account-admin-count"><%= accounts.length %> compte<%= accounts.length === 1 ? '' : 's' %></span>
+            <div class="account-admin-counts">
+                <span class="account-admin-count"><%= accounts.length %> compte<%= accounts.length === 1 ? '' : 's' %></span>
+                <span class="account-admin-count account-admin-pending-count"><%= pendingAccounts.length %> demande<%= pendingAccounts.length === 1 ? '' : 's' %> en attente</span>
+            </div>
         </header>
 
         <% if (notice) { %>
         <div class="account-admin-notice account-admin-notice-<%= notice.type %>" role="status"><%= notice.text %></div>
         <% } %>
+
+        <section class="account-admin-requests" aria-labelledby="account-admin-requests-title">
+            <header class="account-admin-requests-heading">
+                <div>
+                    <p class="account-admin-request-kicker">Validation requise · Accréditation 1</p>
+                    <h2 id="account-admin-requests-title">Demandes de création de compte</h2>
+                    <p>Un compte ne devient actif qu’après votre approbation.</p>
+                </div>
+                <span class="account-admin-request-badge"><%= pendingAccounts.length %> en attente</span>
+            </header>
+
+            <% if (pendingAccounts.length === 0) { %>
+            <div class="account-admin-requests-empty">
+                <span aria-hidden="true">✓</span>
+                <p>Aucune demande à traiter.</p>
+            </div>
+            <% } else { %>
+            <div class="account-admin-request-list">
+                <% pendingAccounts.forEach(request => {
+                    const requestedAt = new Date(request.created_at);
+                %>
+                <article class="account-admin-request-card">
+                    <span class="account-admin-request-avatar" aria-hidden="true"><%= String(request.username || '').charAt(0).toUpperCase() || '?' %></span>
+                    <div class="account-admin-request-identity">
+                        <span>Demande #<%= request.id %></span>
+                        <h3><%= request.username %></h3>
+                        <p><%= request.grade_title || 'Grade non défini' %> · Accréditation <%= request.accreditation %></p>
+                        <time datetime="<%= Number.isNaN(requestedAt.getTime()) ? '' : requestedAt.toISOString() %>">
+                            Reçue le <%= Number.isNaN(requestedAt.getTime()) ? 'date inconnue' : requestedAt.toLocaleString('fr-FR', {dateStyle: 'medium', timeStyle: 'short'}) %>
+                        </time>
+                    </div>
+                    <div class="account-admin-request-actions">
+                        <form method="POST" action="/users/admin-account/registrations/<%= request.id %>/approve">
+                            <button type="submit" class="account-admin-approve-button">Approuver</button>
+                        </form>
+                        <form method="POST" action="/users/admin-account/registrations/<%= request.id %>/reject" onsubmit="return confirm('Refuser cette demande de création de compte ?');">
+                            <button type="submit" class="account-admin-reject-button">Refuser</button>
+                        </form>
+                    </div>
+                </article>
+                <% }) %>
+            </div>
+            <% } %>
+        </section>
 
         <section class="account-admin-intro">
             <span class="account-admin-intro-mark" aria-hidden="true">FIB</span>

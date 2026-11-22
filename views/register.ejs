@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Inscription FIB</title>
     <link rel="stylesheet" href="/css/style.css">
@@ -14,22 +15,26 @@
         <img src="/images/FIB_V2.png" alt="Logo du FIB" class="access-logo">
 
         <h1>Inscription</h1>
-        <p class="subtitle">Créer un nouveau compte FIB</p>
+        <p class="subtitle">Soumettez une demande de création de compte FIB</p>
 
-        <form method="POST" action="/auth/register" id="registerForm">
+        <% if (notice) { %>
+        <p class="register-feedback register-feedback-<%= notice.type %>" role="status"><%= notice.text %></p>
+        <% } %>
+
+        <form method="POST" action="/auth/register">
 
             <div class="input-group">
-                <input name="username" type="text" required>
+                <input name="username" type="text" maxlength="50" autocomplete="username" required>
                 <label>Nom d'utilisateur</label>
             </div>
 
             <div class="input-group">
-                <input type="password" name="password" id="password" required>
+                <input type="password" name="password" minlength="6" maxlength="72" autocomplete="new-password" required>
                 <label>Mot de passe</label>
             </div>
 
             <div class="input-group">
-                <select name="grade_title" required style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #334155; background: transparent; color: white;">
+                <select name="grade_title" required aria-label="Grade demandé" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #334155; background: #080f1f; color: white;">
                     <option value="" disabled selected>Choisir un grade</option>
                     <optgroup label="Niveau 1">
                         <option value="Director">Director</option>
@@ -55,28 +60,12 @@
 
         </form>
 
+        <p class="register-approval-note">Votre compte restera en attente et ne pourra pas être utilisé avant sa validation par un membre d’accréditation 1.</p>
         <p style="margin-top: 20px;"><a href="/" style="color: #1f3cff;">Déjà un compte ? Se connecter</a></p>
 
     </div>
 
 </div>
-
-<script>
-document.getElementById('registerForm').addEventListener('submit', function(e) {
-    const password = document.getElementById('password').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
-
-    if (password !== confirmPassword) {
-        e.preventDefault();
-        alert('Les mots de passe ne correspondent pas.');
-    }
-
-    if (password.length < 6) {
-        e.preventDefault();
-        alert('Le mot de passe doit contenir au moins 6 caractères.');
-    }
-});
-</script>
 
 </body>
 </html>
